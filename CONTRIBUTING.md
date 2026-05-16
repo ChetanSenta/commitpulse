@@ -162,21 +162,23 @@ CommitPulse uses a custom, lightweight **GitHub Actions** automation system to m
 
 Our automation runs entirely through issue comments. Here is how you interact with it:
 
-| Command | Who Can Use It? | What It Does |
-|---------|-----------------|--------------|
-| `/claim` | **Anyone** | Self-assigns the issue to you. |
-| `/addlabel <label1> <label2>` | **Anyone** | Adds labels to the issue (e.g. `/addlabel frontend bug`). |
-| `/unassign @username` | **Maintainers Only** | Removes the assignee from an issue. |
-| `/assign @username` | **Maintainers Only** | Manually assigns someone to an issue. |
+| Command                       | Who Can Use It?      | What It Does                                              |
+| ----------------------------- | -------------------- | --------------------------------------------------------- |
+| `/claim`                      | **Anyone**           | Self-assigns the issue to you.                            |
+| `/addlabel <label1> <label2>` | **Anyone**           | Adds labels to the issue (e.g. `/addlabel frontend bug`). |
+| `/unassign @username`         | **Maintainers Only** | Removes the assignee from an issue.                       |
+| `/assign @username`           | **Maintainers Only** | Manually assigns someone to an issue.                     |
 
 ### ⏳ The Inactivity Policy (Assignment Expiry)
 
 To keep the project moving, assignments are not permanent.
+
 - **The 3-Day Rule:** If an issue has an assignee but sees **no activity for 3 days**, our automated background job will remove the assignment.
 - **What counts as activity?** Posting a comment, opening a linked PR, or a maintainer adding a label.
 - **Why?** It frees up stale issues so other active contributors can pick them up. If your issue expires, you can always `/claim` it again if it's still available!
 
 ### 💡 GSSoC Contributor Flow
+
 1. Find an unassigned open issue you want to work on.
 2. Comment `/claim` to lock it in.
 3. Need labels? Comment `/addlabel good-first-issue` (labels must already exist in the repo).
