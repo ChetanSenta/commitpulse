@@ -32,7 +32,11 @@ Most GitHub stat badges are **flat**. Flat bars, flat text, flat colors. They bl
 
 **CommitPulse is different.**
 
-We render your contribution data as a **3D Isometric City** — a grid of glowing towers where each column's height is directly proportional to your commit count that day. The more you grind, the taller your skyline grows. This is not decoration. This is a **live, animated data visualization** that makes your dedication impossible to ignore.
+We render your contribution data as a **3D Isometric City** — a grid of glowing towers where each column's height is directly proportional to your commit count that day. The more you grind, the taller your skyline grows.
+
+**Ghost City Architecture:** In this mode, zero-contribution days aren't just empty space. They are rendered as thin, wireframe-style **blueprint foundations** (4px high). This gives your commit landscape a structured, architectural "work-in-progress" look even during rest days, maintaining the premium 3D aesthetic across the entire calendar.
+
+This is not decoration. This is a **live, animated data visualization** that makes your dedication impossible to ignore.
 
 ### Why Isometric > Flat
 
