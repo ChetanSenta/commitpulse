@@ -260,7 +260,7 @@ describe('GET /api/streak', () => {
       const body = await response.json();
 
       expect(response.status).toBe(400);
-      expect(body.details.fieldErrors.year[0]).toContain('Invalid "year" parameter');
+      expect(body.details.fieldErrors.year[0]).toContain('GitHub was founded in 2008');
     });
 
     it('returns 400 for malformed numeric year', async () => {
@@ -268,7 +268,7 @@ describe('GET /api/streak', () => {
       const body = await response.json();
 
       expect(response.status).toBe(400);
-      expect(body.details.fieldErrors.year[0]).toContain('Invalid "year" parameter');
+      expect(body.details.fieldErrors.year[0]).toContain('GitHub was founded in 2008');
     });
 
     it('returns 400 for years before GitHub existed', async () => {
@@ -276,7 +276,7 @@ describe('GET /api/streak', () => {
       const body = await response.json();
 
       expect(response.status).toBe(400);
-      expect(body.details.fieldErrors.year[0]).toContain('Invalid "year" parameter');
+      expect(body.details.fieldErrors.year[0]).toContain('GitHub was founded in 2008');
     });
 
     it('returns 400 for future years', async () => {
@@ -286,7 +286,7 @@ describe('GET /api/streak', () => {
       const body = await response.json();
 
       expect(response.status).toBe(400);
-      expect(body.details.fieldErrors.year[0]).toContain('Invalid "year" parameter');
+      expect(body.details.fieldErrors.year[0]).toContain('GitHub was founded in 2008');
     });
   });
 

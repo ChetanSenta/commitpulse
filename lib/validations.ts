@@ -40,21 +40,18 @@ export const streakParamsSchema = z.object({
     .transform((val) => sanitizeFont(val) || undefined),
   year: z
     .string()
-    .regex(/^\d{4}$/, {
-      message: 'Invalid "year" parameter. Use YYYY format, e.g. 2024.',
-    })
+    .optional()
     .refine(
-      (year) => {
-        const yearNum = parseInt(year, 10);
+      (val) => {
+        if (!val) return true;
+        const yearNum = parseInt(val, 10);
         const currentYear = new Date().getFullYear();
-
-        return yearNum >= 2005 && yearNum <= currentYear;
+        return /^\d{4}$/.test(val) && yearNum >= 2008 && yearNum <= currentYear;
       },
       {
-        message: 'Invalid "year" parameter. Use YYYY format, e.g. 2024.',
+        message: 'GitHub was founded in 2008. Please provide a year of 2008 or later.',
       }
-    )
-    .optional(),
+    ),
   refresh: z
     .string()
     .optional()
