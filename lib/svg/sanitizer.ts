@@ -114,3 +114,21 @@ export function sanitizeGoogleFontUrl(fontName: string | undefined | null): stri
   // Return the encoded font name suitable for Google Fonts API URL (spaces replaced with '+')
   return encodeURIComponent(cleaned).replace(/%20/g, '+');
 }
+
+/**
+ * Calculates the relative luminance of a hex color (without leading '#').
+ */
+export function getLuminance(hex: string): number {
+  let cleanHex = hex.trim().replace(/^#+/, '');
+  if (cleanHex.length === 3 || cleanHex.length === 4) {
+    cleanHex = `${cleanHex[0]}${cleanHex[0]}${cleanHex[1]}${cleanHex[1]}${cleanHex[2]}${cleanHex[2]}`;
+  }
+  const r = parseInt(cleanHex.slice(0, 2), 16) / 255 || 0;
+  const g = parseInt(cleanHex.slice(2, 4), 16) / 255 || 0;
+  const b = parseInt(cleanHex.slice(4, 6), 16) / 255 || 0;
+
+  const [R, G, B] = [r, g, b].map((c) =>
+    c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+  );
+  return 0.2126 * R + 0.7152 * G + 0.0722 * B;
+}

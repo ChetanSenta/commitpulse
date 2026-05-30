@@ -881,6 +881,37 @@ describe('generateMonthlySVG', () => {
     expect(svg).toContain('-12 commits');
   });
 
+  it('resolves high-contrast negative delta colors based on theme and luminance', () => {
+    const negativeStats: MonthlyStats = {
+      currentMonthTotal: 18,
+      previousMonthTotal: 30,
+      deltaPercentage: -40,
+      deltaAbsolute: -12,
+      currentMonthName: 'June',
+    };
+
+    // 1. Default dark theme (bg: '0d1117') should resolve to high-contrast red '#f85149'
+    const svgDefault = generateMonthlySVG(negativeStats, {
+      user: 'octocat',
+      bg: '0d1117',
+    } as unknown as BadgeParams);
+    expect(svgDefault).toContain('fill: #f85149');
+
+    // 2. Custom light background (bg: 'ffffff') should resolve to light-mode red '#cf222e'
+    const svgLight = generateMonthlySVG(negativeStats, {
+      user: 'octocat',
+      bg: 'ffffff',
+    } as unknown as BadgeParams);
+    expect(svgLight).toContain('fill: #cf222e');
+
+    // 3. Rose theme background (bg: '1f0d14') should resolve to custom rose negative color '#ff4b72'
+    const svgRose = generateMonthlySVG(negativeStats, {
+      user: 'octocat',
+      bg: '1f0d14',
+    } as unknown as BadgeParams);
+    expect(svgRose).toContain('fill: #ff4b72');
+  });
+
   it('renders monthly stats correctly with percentage delta', () => {
     const svg = generateMonthlySVG(mockMonthlyStats, {
       user: 'octocat',

@@ -2,10 +2,16 @@
 
 import type { BadgeParams, ContributionCalendar, StreakStats, MonthlyStats } from '../../types';
 import { getLabels, type BadgeLabels } from '../i18n/badgeLabels';
-import { AUTO_THEME_DARK, AUTO_THEME_LIGHT } from './themes';
+import { AUTO_THEME_DARK, AUTO_THEME_LIGHT, themes } from './themes';
 import { TOWER_ANIMATION_CSS } from './animations';
 import { computeTowers, type TowerData } from './layout';
-import { sanitizeFont, sanitizeHexColor, sanitizeRadius, sanitizeGoogleFontUrl } from './sanitizer';
+import {
+  sanitizeFont,
+  sanitizeHexColor,
+  sanitizeRadius,
+  sanitizeGoogleFontUrl,
+  getLuminance,
+} from './sanitizer';
 
 import { SVG_WIDTH, SVG_HEIGHT, FONT_MAP } from './generatorConstants';
 
@@ -681,7 +687,22 @@ export function generateMonthlySVG(stats: MonthlyStats, params: BadgeParams): st
             ? `${stats.deltaPercentage}%`
             : `0%`;
   }
-  const deltaColor = stats.deltaAbsolute >= 0 ? accent : '#ff4444';
+  // Resolve negative color
+  let negativeColor = '#ff4444';
+  const cleanBg = sanitizeHexColor(params.bg, '0d1117');
+  const matchedTheme = Object.values(themes).find(
+    (t) => t.bg.toLowerCase() === cleanBg.toLowerCase()
+  );
+
+  if (matchedTheme && matchedTheme.negative) {
+    negativeColor = `#${matchedTheme.negative}`;
+  } else {
+    // Dynamic fallback based on background luminance
+    const luminance = getLuminance(cleanBg);
+    negativeColor = luminance > 0.5 ? '#cf222e' : '#f85149';
+  }
+
+  const deltaColor = stats.deltaAbsolute >= 0 ? accent : negativeColor;
 
   return `
 <svg
@@ -1059,8 +1080,8 @@ function generateAutoThemeMonthlySVG(stats: MonthlyStats, params: BadgeParams): 
   <style>
   @import url('https://fonts.googleapis.com/css2?family=Fira+Code&amp;family=JetBrains+Mono&amp;family=Roboto&amp;family=Syncopate:wght@400;700&amp;family=Space+Grotesk:wght@400;500;600;700&amp;display=swap');
   ${googleFontsImport}
-  :root { --cp-bg: #${light.bg}; --cp-text: #${light.text}; --cp-accent: #${light.accent}; --cp-negative: #ff4444; }
-  @media (prefers-color-scheme: dark) { :root { --cp-bg: #${dark.bg}; --cp-text: #${dark.text}; --cp-accent: #${dark.accent}; --cp-negative: #ff6666; } }
+  :root { --cp-bg: #${light.bg}; --cp-text: #${light.text}; --cp-accent: #${light.accent}; --cp-negative: #${light.negative || 'cf222e'}; }
+  @media (prefers-color-scheme: dark) { :root { --cp-bg: #${dark.bg}; --cp-text: #${dark.text}; --cp-accent: #${dark.accent}; --cp-negative: #${dark.negative || 'f85149'}; } }
   .cp-bg-fill { fill: var(--cp-bg); } 
   .cp-text-fill { fill: var(--cp-text); color: var(--cp-text); } 
   .cp-accent-fill { fill: var(--cp-accent); color: var(--cp-accent); }

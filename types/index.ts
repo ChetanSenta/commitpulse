@@ -37,6 +37,9 @@ export interface BadgeTheme {
 
   /** Tower and glow accent color as a hex string WITHOUT the leading '#' (e.g. '58a6ff'). */
   accent: HexColor;
+
+  /** Negative/error state color as a hex string WITHOUT the leading '#' (e.g. 'ff4444'). Optional. */
+  negative?: HexColor;
 }
 
 /**
