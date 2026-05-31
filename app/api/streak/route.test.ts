@@ -1337,4 +1337,54 @@ describe('GET /api/streak', () => {
       expect(body).toContain('strictly for organizations');
     });
   });
+
+  describe('JSON output mode (format=json)', () => {
+    it('returns JSON with correct Content-Type when format=json is set', async () => {
+      const response = await GET(makeRequest({ user: 'octocat', format: 'json' }));
+      expect(response.status).toBe(200);
+      expect(response.headers.get('Content-Type')).toContain('application/json');
+    });
+
+    it('returns stats, monthlyStats, and calendar in JSON response', async () => {
+      const response = await GET(makeRequest({ user: 'octocat', format: 'json' }));
+      const data = await response.json();
+
+      expect(data.user).toBe('octocat');
+      expect(data.stats).toBeDefined();
+      expect(data.stats.currentStreak).toBeDefined();
+      expect(data.stats.longestStreak).toBeDefined();
+      expect(data.stats.totalContributions).toBeDefined();
+      expect(data.monthlyStats).toBeDefined();
+      expect(data.monthlyStats.currentMonthTotal).toBeDefined();
+      expect(data.calendar).toBeDefined();
+      expect(data.calendar.totalContributions).toBe(10);
+      expect(data.calendar.weeks).toHaveLength(2);
+    });
+
+    it('includes Cache-Control header in JSON response', async () => {
+      const response = await GET(makeRequest({ user: 'octocat', format: 'json' }));
+      expect(response.headers.get('Cache-Control')).toContain('s-maxage=');
+    });
+
+    it('includes X-Cache-Status header in JSON response', async () => {
+      const response = await GET(makeRequest({ user: 'octocat', format: 'json' }));
+      expect(response.headers.get('X-Cache-Status')).toBe('HIT');
+    });
+
+    it('returns SVG when format is not set (default)', async () => {
+      const response = await GET(makeRequest({ user: 'octocat' }));
+      expect(response.headers.get('Content-Type')).toBe('image/svg+xml');
+    });
+
+    it('falls back to SVG for invalid format values', async () => {
+      const response = await GET(makeRequest({ user: 'octocat', format: 'xml' }));
+      expect(response.headers.get('Content-Type')).toBe('image/svg+xml');
+    });
+
+    it('uses org name as user field when org parameter is provided', async () => {
+      const response = await GET(makeRequest({ user: 'octocat', org: 'github', format: 'json' }));
+      const data = await response.json();
+      expect(data.user).toBe('github');
+    });
+  });
 });

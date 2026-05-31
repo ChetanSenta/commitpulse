@@ -254,6 +254,10 @@ const baseStreakParamsSchema = z.object({
   glow: z.string().optional().transform(toBooleanFlag).default(true),
   entrance: z.enum(['rise', 'fade', 'slide', 'none']).catch('rise').default('rise'),
 
+  // Output format: 'svg' (default) or 'json' for programmatic access.
+  // Invalid values silently fall back to 'svg'.
+  format: z.enum(['svg', 'json']).catch('svg').default('svg'),
+
   // layout parameter: strictly validated — unsupported values return a 400 Bad Request.
   layout: z
     .string()
