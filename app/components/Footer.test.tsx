@@ -44,7 +44,7 @@ describe('Footer Component', () => {
 
     // Footers are exposed to assistive tech via the 'contentinfo' role
     const footerElement = screen.getByRole('contentinfo');
-    expect(footerElement).toBeDefined();
+    expect(footerElement).not.toBeNull();
     expect(footerElement.tagName.toLowerCase()).toBe('footer');
   });
 
@@ -53,9 +53,20 @@ describe('Footer Component', () => {
     const { container } = render(<Footer />);
 
     const footerElement = container.querySelector('footer');
-    expect(footerElement).toBeDefined();
+    expect(footerElement).not.toBeNull();
 
-    // Validates that layout structural rules modify display behaviors across breakpoints
-    expect(container.innerHTML).toMatch(/(flex|grid|block|md:|sm:|lg:)/);
+    // Directly grab the text content or class attributes to check for responsive utility markers safely
+    const hasResponsiveClasses = footerElement?.className
+      .split(' ')
+      .some(
+        (cls) =>
+          cls.includes('md:') ||
+          cls.includes('sm:') ||
+          cls.includes('lg:') ||
+          cls.includes('flex') ||
+          cls.includes('grid')
+      );
+
+    expect(hasResponsiveClasses).toBe(true);
   });
 });
