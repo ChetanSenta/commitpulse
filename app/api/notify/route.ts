@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import dbConnect from '@/lib/mongodb';
 import { Notification } from '@/models/Notification';
-import { NotificationPayload, NotificationResponse } from '@/types/index';
+import { NotificationResponse } from '@/types/index';
+import { notifyPostSchema, notifyGetSchema } from '@/lib/validations';
+import { notifyRateLimiter } from '@/lib/rate-limit';
 
 /**
  * Masks an email address to prevent PII exposure in unauthenticated responses.
@@ -31,34 +33,61 @@ function maskEmail(email: string): string {
 // ─── POST /api/notify ────────────────────────────────────────────────────────
 // Register or update email notification preferences for a user
 export async function POST(req: NextRequest): Promise<NextResponse<NotificationResponse>> {
+  // Rate limiting
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0] ?? req.headers.get('x-real-ip') ?? 'unknown';
+
+  if (ip !== 'unknown' && !(await notifyRateLimiter.check(ip))) {
+    return NextResponse.json(
+      { success: false, message: 'Too many requests, please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  // Parse JSON body safely
+  let body: unknown;
   try {
-    const body: NotificationPayload = await req.json();
-    const { username, email, frequency, preferences } = body;
+    body = await req.json();
+  } catch {
+    return NextResponse.json(
+      { success: false, message: 'Malformed JSON request body.' },
+      { status: 400 }
+    );
+  }
 
-    // Validate required fields
-    if (!username || !email) {
-      return NextResponse.json(
-        { success: false, message: 'Username and email are required.' },
-        { status: 400 }
-      );
-    }
+  // Validate with Zod
+  const parsed = notifyPostSchema.safeParse(body);
+  if (!parsed.success) {
+    const fieldErrors = parsed.error.flatten();
+    const firstError =
+      Object.values(fieldErrors.fieldErrors).flat()[0] ??
+      fieldErrors.formErrors[0] ??
+      'Invalid request body.';
+    return NextResponse.json({ success: false, message: firstError }, { status: 400 });
+  }
 
-    // Validate email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid email address.' },
-        { status: 400 }
-      );
-    }
+  const { username, email, frequency, preferences } = parsed.data;
 
-    // Validate frequency
-    const validFrequencies = ['realtime', 'daily', 'weekly'];
-    if (frequency && !validFrequencies.includes(frequency)) {
-      return NextResponse.json(
-        { success: false, message: 'Invalid frequency. Use realtime, daily, or weekly.' },
-        { status: 400 }
+  try {
+    // Graceful MONGODB_URI handling
+    if (!process.env.MONGODB_URI) {
+      if (process.env.NODE_ENV === 'production') {
+        console.error(
+          'CRITICAL: MONGODB_URI is not set in production environment. Notification registration is disabled.'
+        );
+        return NextResponse.json(
+          { success: false, message: 'Database configuration error.' },
+          { status: 500 }
+        );
+      }
+
+      console.warn(
+        'MONGODB_URI is not set. Bypassing notification registration for local development.'
       );
+      return NextResponse.json({
+        success: true,
+        message: 'Notification registration bypassed (no database configured).',
+      });
     }
 
     await dbConnect();
@@ -68,10 +97,10 @@ export async function POST(req: NextRequest): Promise<NextResponse<NotificationR
       { username: username.toLowerCase() },
       {
         email: email.toLowerCase(),
-        frequency: frequency ?? 'daily',
-        notifyOnCommit: preferences?.notifyOnCommit ?? true,
-        notifyOnStreak: preferences?.notifyOnStreak ?? true,
-        notifyOnMilestone: preferences?.notifyOnMilestone ?? true,
+        frequency,
+        notifyOnCommit: preferences.notifyOnCommit,
+        notifyOnStreak: preferences.notifyOnStreak,
+        notifyOnMilestone: preferences.notifyOnMilestone,
         isActive: true,
         updatedAt: new Date(),
       },
@@ -107,15 +136,52 @@ export async function POST(req: NextRequest): Promise<NextResponse<NotificationR
 // ─── GET /api/notify ─────────────────────────────────────────────────────────
 // Fetch notification preferences for a user
 export async function GET(req: NextRequest): Promise<NextResponse<NotificationResponse>> {
-  try {
-    const { searchParams } = new URL(req.url);
-    const username = searchParams.get('user');
+  // Rate limiting
+  const ip =
+    req.headers.get('x-forwarded-for')?.split(',')[0] ?? req.headers.get('x-real-ip') ?? 'unknown';
 
-    if (!username) {
-      return NextResponse.json(
-        { success: false, message: 'Username is required.' },
-        { status: 400 }
-      );
+  if (ip !== 'unknown' && !(await notifyRateLimiter.check(ip))) {
+    return NextResponse.json(
+      { success: false, message: 'Too many requests, please try again later.' },
+      { status: 429 }
+    );
+  }
+
+  // Validate query params with Zod
+  const { searchParams } = new URL(req.url);
+  const parsed = notifyGetSchema.safeParse({
+    user: searchParams.get('user') ?? undefined,
+  });
+
+  if (!parsed.success) {
+    const fieldErrors = parsed.error.flatten();
+    const firstError =
+      Object.values(fieldErrors.fieldErrors).flat()[0] ??
+      fieldErrors.formErrors[0] ??
+      'Invalid request parameters.';
+    return NextResponse.json({ success: false, message: firstError }, { status: 400 });
+  }
+
+  const { user: username } = parsed.data;
+
+  try {
+    // Graceful MONGODB_URI handling
+    if (!process.env.MONGODB_URI) {
+      if (process.env.NODE_ENV === 'production') {
+        console.error(
+          'CRITICAL: MONGODB_URI is not set in production environment. Notification lookup is disabled.'
+        );
+        return NextResponse.json(
+          { success: false, message: 'Database configuration error.' },
+          { status: 500 }
+        );
+      }
+
+      console.warn('MONGODB_URI is not set. Bypassing notification lookup for local development.');
+      return NextResponse.json({
+        success: false,
+        message: 'No notification preferences found (no database configured).',
+      });
     }
 
     await dbConnect();

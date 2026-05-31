@@ -64,7 +64,7 @@ function dimensionParam(name: string, min: number, max: number) {
     .transform(toDimensionValue);
 }
 
-const GITHUB_USERNAME_REGEX = /^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9]))*$/;
+export const GITHUB_USERNAME_REGEX = /^[a-zA-Z0-9](?:[a-zA-Z0-9]|-(?=[a-zA-Z0-9]))*$/;
 
 const baseStreakParamsSchema = z.object({
   // Required — missing user surfaces as "Missing" to match existing tests
@@ -462,9 +462,54 @@ export const compareParamsSchema = z
     path: ['user2'],
   });
 
+export const notifyPostSchema = z.object({
+  username: z
+    .string({ error: 'Username is required.' })
+    .trim()
+    .min(1, { message: 'Username is required.' })
+    .max(39, { message: 'GitHub username cannot exceed 39 characters.' })
+    .regex(GITHUB_USERNAME_REGEX, {
+      message: 'Invalid GitHub username format.',
+    }),
+  email: z
+    .string({ error: 'Email is required.' })
+    .trim()
+    .min(1, { message: 'Email is required.' })
+    .email({ message: 'Invalid email address.' }),
+  frequency: z
+    .enum(['realtime', 'daily', 'weekly'], {
+      message: 'Invalid frequency. Use realtime, daily, or weekly.',
+    })
+    .default('daily'),
+  preferences: z
+    .object({
+      notifyOnCommit: z.boolean().default(true),
+      notifyOnStreak: z.boolean().default(true),
+      notifyOnMilestone: z.boolean().default(true),
+    })
+    .default({
+      notifyOnCommit: true,
+      notifyOnStreak: true,
+      notifyOnMilestone: true,
+    }),
+});
+
+export const notifyGetSchema = z.object({
+  user: z
+    .string({ error: 'Username is required.' })
+    .trim()
+    .min(1, { message: 'Username is required.' })
+    .max(39, { message: 'GitHub username cannot exceed 39 characters.' })
+    .regex(GITHUB_USERNAME_REGEX, {
+      message: 'Invalid GitHub username format.',
+    }),
+});
+
 export type StreakParams = z.infer<typeof streakParamsSchema>;
 export type GithubParams = z.infer<typeof githubParamsSchema>;
 export type OgParams = z.infer<typeof ogParamsSchema>;
 export type StatsParams = z.infer<typeof statsParamsSchema>;
 export type WrappedParams = z.infer<typeof wrappedParamsSchema>;
 export type CompareParams = z.infer<typeof compareParamsSchema>;
+export type NotifyPostParams = z.infer<typeof notifyPostSchema>;
+export type NotifyGetParams = z.infer<typeof notifyGetSchema>;
