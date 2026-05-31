@@ -15,6 +15,7 @@ import ActivityLandscape from './ActivityLandscape';
 import LanguageChart from './LanguageChart';
 import CommitClock from './CommitClock';
 import Heatmap from './Heatmap';
+import HistoricalTrendView from './HistoricalTrendView';
 import AIInsights from './AIInsights';
 import StatsCard from './StatsCard';
 import RepositoryGraph from './RepositoryGraph';
@@ -22,6 +23,7 @@ import ComparisonStatsCard from './ComparisonStatsCard';
 import RadarChart from './RadarChart';
 import GrowthTrendChart from './GrowthTrendChart';
 import ProfileOptimizerModal from './ProfileOptimizerModal';
+import type { DashboardPeriod } from '@/utils/dashboardPeriod';
 
 // Define the dashboard data structure
 interface DashboardData {
@@ -75,6 +77,7 @@ interface DashboardData {
 interface DashboardClientProps {
   initialData: DashboardData;
   username: string;
+  period: DashboardPeriod;
 }
 
 export interface ProfileMetrics {
@@ -318,7 +321,7 @@ function getPersonalityTags(
 // DashboardClient Component
 // ------------------------------------------------------------
 
-export default function DashboardClient({ initialData, username }: DashboardClientProps) {
+export default function DashboardClient({ initialData, username, period }: DashboardClientProps) {
   const [secondUserData, setSecondUserData] = useState<DashboardData | null>(null);
   const [isCompareMode, setIsCompareMode] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -621,7 +624,11 @@ export default function DashboardClient({ initialData, username }: DashboardClie
             </section>
 
             <section>
-              <Heatmap data={initialData.activity} />
+              <HistoricalTrendView
+                activity={initialData.activity}
+                username={username}
+                period={period}
+              />
             </section>
           </div>
 
@@ -647,7 +654,7 @@ export default function DashboardClient({ initialData, username }: DashboardClie
               <StatsCard
                 title="Contributions"
                 value={initialData.stats.totalContributions.toString()}
-                description="Last Year"
+                description={period.label}
                 icon="GitCommit"
               />
             </div>

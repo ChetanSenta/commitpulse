@@ -241,6 +241,7 @@ type FetchOptions = {
   bypassCache?: boolean;
   from?: string;
   to?: string;
+  rangeLabel?: string;
   signal?: AbortSignal;
 };
 
@@ -890,12 +891,16 @@ type Language = {
   name: string;
 };
 
-export function buildInsights(streakStats: StreakStats, languages: Language[]) {
+export function buildInsights(
+  streakStats: StreakStats,
+  languages: Language[],
+  periodLabel = 'this year'
+) {
   const insights = [
     {
       id: '1',
       icon: 'Flame',
-      text: `You have a total of ${streakStats.totalContributions} contributions this year.`,
+      text: `You have a total of ${streakStats.totalContributions} contributions during ${periodLabel}.`,
     },
     {
       id: '2',
