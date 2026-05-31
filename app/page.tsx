@@ -1,6 +1,6 @@
 'use client';
 import { trackUser } from '@/utils/tracking';
-import type { ReactNode } from 'react';
+
 import Link from 'next/link';
 import { useRef, useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -11,7 +11,7 @@ import { CustomizeCTA } from './components/CustomizeCTA';
 import { useRecentSearches } from '@/hooks/useRecentSearches';
 import { useDebounce } from '@/hooks/useDebounce';
 import { Footer } from '@/app/components/Footer';
-import InteractiveViewer from '@/components/InteractiveViewer';
+
 import { FeatureCard, FeatureCardsSection } from '@/components/FeatureCards';
 import { DiscordButton } from '@/components/DiscordButton';
 
