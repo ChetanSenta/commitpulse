@@ -275,6 +275,8 @@ const baseStreakParamsSchema = z.object({
       return val === 'true';
     })
     .default(false),
+  gradient_stops: z.string().optional(),
+  gradient_dir: z.enum(['vertical', 'horizontal', 'diagonal']).catch('vertical').optional(),
   disable_particles: z
     .string()
     .optional()

@@ -646,6 +646,9 @@ export function generateSVG(
     computeTowers(calendar, params.scale, stats.todayDate, params.mode),
     sf
   );
+  if (params.gradient) {
+    generateCustomGradients(params);
+  }
   const towers = renderTowers(
     towerData,
     params,
