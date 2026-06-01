@@ -327,10 +327,17 @@ describe('LandingPage', () => {
 
     const featureHeadings = screen.getAllByRole('heading', { level: 3 });
 
-    expect(featureHeadings).toHaveLength(3);
+    expect(featureHeadings).toHaveLength(6);
 
     const titles = featureHeadings.map((h) => h.textContent);
-    expect(titles).toEqual(['Real-time Sync', 'Theme Engine', 'Isometric Math']);
+    expect(titles).toEqual([
+      'Real-time Sync',
+      'Theme Engine',
+      'Isometric Math',
+      'Navigation',
+      'Resources',
+      'Connect',
+    ]);
   });
 
   it('renders the CustomizeCTA', () => {
