@@ -42,9 +42,19 @@ vi.mock('gsap/ScrollTrigger', () => ({
 
 vi.mock('framer-motion', () => ({
   motion: {
-    div: (props: any) => <div {...props}>{props.children}</div>,
-    span: (props: any) => <span {...props}>{props.children}</span>,
-    p: (props: any) => <p {...props}>{props.children}</p>,
+    div: 'div',
+    span: 'span',
+    p: 'p',
+    h1: 'h1',
+    h2: 'h2',
+    h3: 'h3',
+    h4: 'h4',
+    h5: 'h5',
+    h6: 'h6',
+    section: 'section',
+    a: 'a',
+    button: 'button',
+    img: 'img',
   },
   AnimatePresence: ({ children }: any) => <>{children}</>,
   useMotionValue: (initial: any) => ({ current: initial, set: vi.fn() }),
