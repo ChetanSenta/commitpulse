@@ -157,9 +157,7 @@ describe('RadarChart', () => {
     }));
 
     // Verify that not all circles are at the same position (indicating dynamic scaling)
-    const uniquePositions = new Set(
-      circlePositions.map((pos) => `${pos.cx},${pos.cy}`)
-    );
+    const uniquePositions = new Set(circlePositions.map((pos) => `${pos.cx},${pos.cy}`));
     expect(uniquePositions.size).toBeGreaterThan(1);
   });
 });
