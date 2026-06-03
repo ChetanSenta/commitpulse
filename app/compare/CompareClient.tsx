@@ -1142,7 +1142,7 @@ export default function CompareClient() {
 
                 {/* Profile Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 relative">
-                  <CompareProfileCard profile={d1.profile} stats={d1.stats} side="left" />
+                  <CompareProfileCard user={d1} side="left" />
 
                   {/* VS Divider */}
                   <div className="hidden md:flex absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
@@ -1151,7 +1151,7 @@ export default function CompareClient() {
                     </div>
                   </div>
 
-                  <CompareProfileCard profile={d2.profile} stats={d2.stats} side="right" />
+                  <CompareProfileCard user={d2} side="right" />
                 </div>
 
                 {/* Stats Battle Grid */}
