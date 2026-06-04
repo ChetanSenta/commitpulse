@@ -4,23 +4,33 @@ import GithubWrapped from './GithubWrapped';
 import type { WrappedStats, UserProfile } from '@/types/dashboard';
 
 const profile: UserProfile = {
-  username: 'riddhima',
-  name: 'Riddhima Gupta',
-  avatarUrl: 'https://example.com/avatar.png',
-  bio: null,
-  followers: 10,
-  following: 5,
-  publicRepos: 20,
-  developerScore: 85,
+  username: 'alexdev',
+  name: 'Alex Morgan',
+  avatarUrl: 'https://example.com/alex-avatar.png',
+  isPro: false,
+  bio: 'Open source contributor',
+  location: 'San Francisco, CA',
+  joinedDate: '2023-01-15',
+  developerScore: 92,
+  stats: {
+    repositories: 48,
+    followers: 230,
+    following: 75,
+    stars: 1200,
+  },
 };
 
 const wrappedData: WrappedStats = {
-  totalContributions: 1200,
+  totalContributions: 2450,
+  mostActiveDate: '2026-05-18',
+  highestDailyCount: 64,
+  busiestMonth: '2026-05',
+  weekendRatio: 32,
   topLanguage: 'TypeScript',
-  highestDailyCount: 42,
-  mostActiveDate: '2026-06-04',
-  busiestMonth: '2026-06',
-  weekendRatio: 30,
+  calendar: {
+    totalContributions: 2450,
+    weeks: [],
+  },
 };
 
 const renderWrapped = () => render(<GithubWrapped profile={profile} wrappedData={wrappedData} />);
@@ -53,7 +63,7 @@ describe('GithubWrapped mouse interactivity', () => {
     fireEvent.mouseEnter(weekendCard);
     fireEvent.mouseLeave(weekendCard);
 
-    expect(screen.getByText('30%')).toBeInTheDocument();
+    expect(screen.getByText('32%')).toBeInTheDocument();
     expect(screen.getByText(/Take a break/i)).toBeInTheDocument();
   });
 
@@ -64,7 +74,7 @@ describe('GithubWrapped mouse interactivity', () => {
 
     fireEvent.click(highestDailyCard);
 
-    expect(screen.getByText('42 Commits')).toBeInTheDocument();
+    expect(screen.getByText('64 Commits')).toBeInTheDocument();
   });
 
   it('supports touch gesture events on mobile-like interaction targets', () => {
@@ -75,6 +85,6 @@ describe('GithubWrapped mouse interactivity', () => {
     fireEvent.touchStart(busiestMonthCard);
     fireEvent.touchEnd(busiestMonthCard);
 
-    expect(screen.getByText('June 2026')).toBeInTheDocument();
+    expect(screen.getByText('May 2026')).toBeInTheDocument();
   });
 });
