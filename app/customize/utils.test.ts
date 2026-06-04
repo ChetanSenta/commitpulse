@@ -11,9 +11,11 @@ describe('Export Snippet utilities', () => {
       const result = getExportSnippet('markdown', queryString);
 
       expect(typeof result).toBe('string');
-      expect(result.startsWith('![CommitPulse]')).toBe(true);
+      expect(result.startsWith('![CommitPulse Contribution Graph for testuser]')).toBe(true);
       expect(result).toContain(EXPECTED_BASE_URL);
-      expect(result).toBe(`![CommitPulse](${EXPECTED_BASE_URL}?${queryString})`);
+      expect(result).toBe(
+        `![CommitPulse Contribution Graph for testuser](${EXPECTED_BASE_URL}?${queryString})`
+      );
     });
 
     it('generates html snippet', () => {
@@ -23,7 +25,9 @@ describe('Export Snippet utilities', () => {
       expect(typeof result).toBe('string');
       expect(result.startsWith('<img src=')).toBe(true);
       expect(result).toContain(EXPECTED_BASE_URL);
-      expect(result).toBe(`<img src="${EXPECTED_BASE_URL}?${queryString}" alt="CommitPulse" />`);
+      expect(result).toBe(
+        `<img src="${EXPECTED_BASE_URL}?${queryString}" alt="CommitPulse Contribution Graph for testuser" />`
+      );
     });
 
     it('generates action snippet', () => {
@@ -41,7 +45,7 @@ describe('Export Snippet utilities', () => {
       const markdownResult = getExportSnippet('markdown', emptyQuery);
       const htmlResult = getExportSnippet('html', emptyQuery);
 
-      expect(markdownResult.startsWith('![CommitPulse]')).toBe(true);
+      expect(markdownResult.startsWith('![CommitPulse Contribution Graph]')).toBe(true);
       expect(markdownResult).toContain(EXPECTED_BASE_URL);
 
       expect(htmlResult.startsWith('<img src=')).toBe(true);
@@ -60,7 +64,9 @@ describe('Export Snippet utilities', () => {
       const result = getExportSnippet('markdown', complexQuery);
 
       expect(result).toContain(complexQuery);
-      expect(result).toBe(`![CommitPulse](${EXPECTED_BASE_URL}?${complexQuery})`);
+      expect(result).toBe(
+        `![CommitPulse Contribution Graph for complex%20name](${EXPECTED_BASE_URL}?${complexQuery})`
+      );
     });
 
     it('throws error for unknown format', () => {
@@ -73,7 +79,9 @@ describe('Export Snippet utilities', () => {
     it('includes placeholder username in markdown', () => {
       const result = getPlaceholderSnippet('markdown');
 
-      expect(result.startsWith('![CommitPulse]')).toBe(true);
+      expect(result.startsWith('![CommitPulse Contribution Graph for your-github-username]')).toBe(
+        true
+      );
       expect(result).toContain('your-github-username');
       expect(result).toContain(EXPECTED_BASE_URL);
     });
@@ -111,7 +119,7 @@ describe('Export Snippet utilities', () => {
       textHex: '',
       scale: 'linear',
       speed: '8s',
-      font: '',
+      font: 'Inter',
       year: '',
       radius: 8,
       size: 'medium',
@@ -129,13 +137,13 @@ describe('Export Snippet utilities', () => {
 
     it('returns minimal params with default values', () => {
       const result = buildQueryParams(defaultOptions);
-      expect(result).toBe('user=testuser&theme=dark');
+      expect(result).toBe('user=testuser&theme=dark&font=Inter');
     });
 
     it('applies custom theme values', () => {
       const options = { ...defaultOptions, theme: 'light' };
       const result = buildQueryParams(options);
-      expect(result).toBe('user=testuser&theme=light');
+      expect(result).toBe('user=testuser&theme=light&font=Inter');
     });
 
     it('applies custom color overrides and omits theme', () => {
@@ -147,7 +155,7 @@ describe('Export Snippet utilities', () => {
         textHex: '#000000',
       };
       const result = buildQueryParams(options);
-      expect(result).toBe('user=testuser&bg=ffffff&accent=ff0000&text=000000');
+      expect(result).toBe('user=testuser&bg=ffffff&accent=ff0000&text=000000&font=Inter');
     });
 
     it('forces theme parameter and ignores custom colors for virtual themes (auto/random)', () => {
@@ -157,7 +165,7 @@ describe('Export Snippet utilities', () => {
         bgHex: 'ffffff',
       };
       const resultAuto = buildQueryParams(optionsAuto);
-      expect(resultAuto).toBe('user=testuser&theme=auto');
+      expect(resultAuto).toBe('user=testuser&theme=auto&font=Inter');
 
       const optionsRandom = {
         ...defaultOptions,
@@ -165,13 +173,13 @@ describe('Export Snippet utilities', () => {
         accentHex: 'ff0000',
       };
       const resultRandom = buildQueryParams(optionsRandom);
-      expect(resultRandom).toBe('user=testuser&theme=random');
+      expect(resultRandom).toBe('user=testuser&theme=random&font=Inter');
     });
 
     it('handles empty username gracefully', () => {
       const options = { ...defaultOptions, username: '   ' };
       const result = buildQueryParams(options);
-      expect(result).toBe('theme=dark');
+      expect(result).toBe('theme=dark&font=Inter');
     });
 
     it('includes all customized options', () => {
