@@ -19,11 +19,6 @@ describe('statsParamsSchema', () => {
       user: 'octocat',
       refresh: 'true',
       tz: 'Asia/Kolkata',
-  it('parses a valid input with custom timezone and refresh flag', () => {
-    const result = statsParamsSchema.safeParse({
-      user: 'octocat',
-      tz: 'America/New_York',
-      refresh: 'true',
     });
     expect(result.success).toBe(true);
     if (result.success) {
@@ -46,22 +41,6 @@ describe('statsParamsSchema', () => {
     expect(statsParamsSchema.safeParse({ user: 'octocat', refresh: 'TRUE' }).data?.refresh).toBe(
       false
     );
-  });
-
-  it('fails validation on invalid user parameters', () => {
-    expect(statsParamsSchema.safeParse({}).success).toBe(false);
-    expect(statsParamsSchema.safeParse({ user: '' }).success).toBe(false);
-    expect(statsParamsSchema.safeParse({ user: 'a'.repeat(40) }).success).toBe(false);
-    expect(statsParamsSchema.safeParse({ user: 'invalid-user!' }).success).toBe(false);
-  });
-
-  it('fails validation on invalid timezone strings', () => {
-    expect(statsParamsSchema.safeParse({ user: 'octocat', tz: 'Invalid/Timezone' }).success).toBe(
-      false
-    );
-    expect(statsParamsSchema.safeParse({ user: 'octocat', tz: 'UTC' }).success).toBe(true);
-      expect(result.data.tz).toBe('America/New_York');
-    }
   });
 
   // ── Invalid inputs ────────────────────────────────────────────────────────
