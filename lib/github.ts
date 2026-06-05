@@ -1396,6 +1396,13 @@ export async function getFullDashboardData(username: string, options: FetchOptio
       cause: profileResult.reason,
     });
 
+  // Treat a failed contributions fetch as a first-class error rather than silently
+  // returning zeroed stats, which would otherwise present a false "no activity" result.
+  if (calendarResult.status === 'rejected')
+    throw new Error(`[GitHub API] Failed to fetch contributions for user "${username}"`, {
+      cause: calendarResult.reason,
+    });
+
   const profileData = profileResult.value;
   const reposData = reposResult.status === 'fulfilled' ? reposResult.value : [];
   const calendarData =
