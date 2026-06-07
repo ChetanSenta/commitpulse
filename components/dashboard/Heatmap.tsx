@@ -30,22 +30,48 @@ interface HeatmapProps {
   title?: string;
   subtitle?: string;
   emptyMessage?: string;
+  timeZone?: string;
 }
 
-export default function Heatmap({ data, title, subtitle, emptyMessage }: HeatmapProps) {
+export default function Heatmap({
+  data,
+  title,
+  subtitle,
+  emptyMessage,
+  timeZone = 'UTC',
+}: HeatmapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const { t } = useTranslation();
 
-  // Group into 7-day columns
+  const effectiveTimeZone = timeZone || 'UTC';
+
+  const getTimeZoneDateLabel = (input: string | Date) => {
+    const date = typeof input === 'string' ? new Date(`${input}T00:00:00Z`) : input;
+
+    return new Intl.DateTimeFormat('en-CA', {
+      timeZone: effectiveTimeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(date);
+  };
+
+  // 1. Filter out future dates by comparing the activity day against the current
+  // timezone-specific calendar date.
+  const todayInZone = getTimeZoneDateLabel(new Date());
+
+  const validData = data.filter((day) => day.date <= todayInZone);
+
+  // 2. Group into 7-day columns using validData instead of data
   const weeks: ActivityData[][] = [];
-  for (let i = 0; i < data.length; i += 7) {
-    weeks.push(data.slice(i, i + 7));
+  for (let i = 0; i < validData.length; i += 7) {
+    weeks.push(validData.slice(i, i + 7));
   }
 
   const naturalWidth = weeks.length * (CELL + GAP) - GAP;
-  const hasData = data.length > 0 && data.some((d) => d.count > 0);
+  const hasData = validData.length > 0 && validData.some((d) => d.count > 0);
 
   // Recalculate scale whenever the card resizes
   useEffect(() => {
@@ -66,7 +92,9 @@ export default function Heatmap({ data, title, subtitle, emptyMessage }: Heatmap
     index: number
   ) => {
     const rect = e.currentTarget.getBoundingClientRect();
-    const streak = getLocalActiveStreak(data, index);
+
+    // 3. Ensure streak calculation also uses validData
+    const streak = getLocalActiveStreak(validData, index);
 
     setTooltip({
       count: day.count,
@@ -176,7 +204,6 @@ export default function Heatmap({ data, title, subtitle, emptyMessage }: Heatmap
           </div>
         )}
       </motion.div>
-
       {/* Tooltip rendered at viewport level — unaffected by scale/overflow */}
       <AnimatePresence>
         {tooltip && (

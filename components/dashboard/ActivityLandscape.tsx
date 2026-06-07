@@ -4,12 +4,34 @@ import { useState, type SyntheticEvent } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import type { ActivityData } from '@/types/dashboard';
 import VisualizationTooltip from './VisualizationTooltip';
-import { formatTooltipDate, getActivityInsight, getContributionLabel } from './tooltipUtils';
+import {
+  formatTooltipDate,
+  formatTooltipRange,
+  getActivityInsight,
+  getContributionLabel,
+} from './tooltipUtils';
 import { useTranslation } from '@/context/TranslationContext';
 
 const tabs = ['1W', '1M', '3M', '1Y'];
 
-export const getFilteredData = (data: ActivityData[], activeTab: string): ActivityData[] => {
+// One bar: a single day, or an aggregated bucket that also records its window span (startDate, days).
+export type ActivityBar = ActivityData & { startDate?: string; days?: number };
+
+// Sum a window of days into one bar; count and loc are window sums and the bar records the bucket's span.
+const aggregateBucket = (bucket: ActivityData[]): ActivityBar => {
+  const last = bucket[bucket.length - 1];
+  return {
+    date: last.date,
+    startDate: bucket[0].date,
+    days: bucket.length,
+    count: bucket.reduce((sum, d) => sum + d.count, 0),
+    intensity: Math.max(...bucket.map((d) => d.intensity)) as ActivityData['intensity'],
+    locAdditions: bucket.reduce((sum, d) => sum + (d.locAdditions || 0), 0),
+    locDeletions: bucket.reduce((sum, d) => sum + (d.locDeletions || 0), 0),
+  };
+};
+
+export const getFilteredData = (data: ActivityData[], activeTab: string): ActivityBar[] => {
   let days = 90;
   if (activeTab === '1W') days = 7;
   if (activeTab === '1M') days = 30;
@@ -17,10 +39,21 @@ export const getFilteredData = (data: ActivityData[], activeTab: string): Activi
 
   const recent = data.slice(-days);
 
-  // Downsample to max 60 bars to keep the visualization clean
+  // Aggregate into at most 60 bars, summing each window so no days are dropped.
   if (recent.length > 60) {
     const step = Math.ceil(recent.length / 60);
-    return recent.filter((_, i) => i % step === 0).slice(-60);
+    const remainder = recent.length % step;
+    const buckets: ActivityBar[] = [];
+
+    // Keep the partial bucket at the oldest edge so the most recent bars stay full windows.
+    if (remainder > 0) {
+      buckets.push(aggregateBucket(recent.slice(0, remainder)));
+    }
+    for (let i = remainder; i < recent.length; i += step) {
+      buckets.push(aggregateBucket(recent.slice(i, i + step)));
+    }
+
+    return buckets;
   }
 
   return recent;
@@ -48,21 +81,37 @@ export default function ActivityLandscape({ data }: { data: ActivityData[] }) {
 
   const maxCount = Math.max(...displayData.map(getValue), 1);
 
-  const showTooltip = (e: SyntheticEvent<HTMLDivElement>, day: ActivityData, value: number) => {
+  const showTooltip = (e: SyntheticEvent<HTMLDivElement>, day: ActivityBar, value: number) => {
     const rect = e.currentTarget.getBoundingClientRect();
+    const isRange = !!day.startDate && day.startDate !== day.date;
 
     setTooltip({
-      title: formatTooltipDate(day.date),
+      title:
+        day.startDate && day.startDate !== day.date
+          ? formatTooltipRange(day.startDate, day.date)
+          : formatTooltipDate(day.date),
       metric:
         mode === 'loc'
-          ? t('dashboard.activity.lines_modified', { count: value.toString() })
+          ? t('dashboard.activity.lines_modified', {
+              count: value.toString(),
+              defaultValue: `${value} lines modified`,
+            })
           : getContributionLabel(day.count, t),
       insight:
         mode === 'loc'
           ? value > 0
-            ? t('dashboard.heatmap.code_activity')
-            : t('dashboard.heatmap.no_code_changes')
-          : getActivityInsight(day.count, day.intensity, t),
+            ? t('dashboard.heatmap.code_activity', { defaultValue: 'Code activity recorded' })
+            : t('dashboard.heatmap.no_code_changes', { defaultValue: 'No code changes recorded' })
+          : isRange
+            ? day.count === 0
+              ? t('dashboard.activity.no_activity_range', {
+                  defaultValue: 'No activity in this range',
+                })
+              : t('dashboard.activity.range_total', {
+                  days: (day.days || 0).toString(),
+                  defaultValue: `Total across ${day.days || 0} days`,
+                })
+            : getActivityInsight(day.count, day.intensity, t),
       x: rect.left + rect.width / 2,
       y: rect.top - 10,
     });
@@ -155,9 +204,23 @@ export default function ActivityLandscape({ data }: { data: ActivityData[] }) {
                 className="group/bar relative flex h-full flex-1 cursor-pointer items-end outline-none"
                 aria-label={`${
                   mode === 'loc'
-                    ? t('dashboard.activity.lines_modified', { count: val.toString() })
+                    ? t('dashboard.activity.lines_modified', {
+                        count: val.toString(),
+                        defaultValue: `${val} lines modified`,
+                      })
                     : getContributionLabel(day.count, t)
-                } on ${formatTooltipDate(day.date)}`}
+                } ${
+                  day.startDate && day.startDate !== day.date
+                    ? t('dashboard.activity.aria_range', {
+                        start: formatTooltipDate(day.startDate),
+                        end: formatTooltipDate(day.date),
+                        defaultValue: `from ${formatTooltipDate(day.startDate)} to ${formatTooltipDate(day.date)}`,
+                      })
+                    : t('dashboard.activity.aria_single', {
+                        date: formatTooltipDate(day.date),
+                        defaultValue: `on ${formatTooltipDate(day.date)}`,
+                      })
+                }`}
                 tabIndex={0}
                 onMouseEnter={(e) => showTooltip(e, day, val)}
                 onFocus={(e) => showTooltip(e, day, val)}

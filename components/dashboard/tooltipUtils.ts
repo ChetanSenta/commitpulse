@@ -17,6 +17,10 @@ export function formatTooltipDate(date: string) {
   return tooltipDateFormatter.format(parsed);
 }
 
+export function formatTooltipRange(start: string, end: string) {
+  return `${formatTooltipDate(start)} - ${formatTooltipDate(end)}`;
+}
+
 export function getContributionLabel(
   count: number,
   t?: (key: string, options?: Record<string, string>) => string
