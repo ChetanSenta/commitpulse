@@ -171,6 +171,7 @@ export class TTLCache<T> {
     TTLCache.assertValidKey(key);
 
     if (ttlMs <= 0) throw new RangeError(`ttlMs must be positive, got ${ttlMs}`);
+    if (Number.isNaN(ttlMs)) ttlMs = 60_000;
 
     if (key.length > 10000) {
       throw new Error('Cache key exceeds maximum allowed length to prevent memory bloat');
