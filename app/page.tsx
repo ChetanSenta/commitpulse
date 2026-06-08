@@ -4,14 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { gsap } from 'gsap';
 import { useGSAP } from '@gsap/react';
 
-import {
-  Flame,
-  Trophy,
-  GitCommit,
-  Folder,
-  Search,
-  X,
-} from 'lucide-react';
+import { Flame, Trophy, GitCommit, Folder, Search, X } from 'lucide-react';
 
 import useLocalStorage from '@/hooks/useLocalStorage';
 import { useDebounce } from '@/hooks/useDebounce';
@@ -167,7 +160,7 @@ export default function LandingPage() {
           <DiscordButton />
 
           <div ref={heroRef}>
-            <h1 className="hero-text opacity-0 translate-y-10 mb-8 bg-gradient-to-br from-gray-900 via-black to-gray-600 dark:from-white dark:via-gray-100 dark:to-gray-500 bg-clip-text text-transparent text-5xl font-black tracking-tighter md:text-8xl pb-2">
+            <h1 className="hero-text opacity-0 translate-y-10 mb-8 bg-gradient-to-br from-gray-900 via-black to-gray-600 dark:from-white dark:via-gray-100 dark:to-gray-500 bg-clip-text text-transparent">
               Elevate Your <br />{' '}
               <span className="contribution-text inline-block bg-[length:300%_300%] bg-gradient-to-r from-emerald-400 via-cyan-500 to-purple-500 bg-clip-text text-transparent drop-shadow-sm">
                 Contribution
@@ -188,7 +181,7 @@ export default function LandingPage() {
         </div>
 
         <section className="mx-auto mb-16 max-w-4xl relative z-20">
-          <div className="rounded-3xl border border-black/5 bg-white/60 p-4 shadow-xl shadow-black/5 backdrop-blur-xl dark:border-white/10 dark:bg-[#0a0a0a]/80 dark:shadow-2xl dark:shadow-black/50 md:p-8">
+          <div className="rounded-3xl border border-black/5 bg-white/60 p-4 shadow-xl shadow-black/5 backdrop-blur-xl dark:border-white/10 dark:bg-[#0a0a0a]/80 dark:shadow-2xl dark:shadow-black/50">
             <form onSubmit={handleGenerate} className="flex flex-col gap-4 w-full">
               <div className="flex flex-col sm:flex-row gap-4 w-full">
                 <div className="relative flex-1 flex items-center">
@@ -199,7 +192,7 @@ export default function LandingPage() {
                     type="text"
                     placeholder="Enter GitHub Username"
                     aria-label="Enter GitHub username to generate badge"
-                    className="flex-1 rounded-2xl border border-black/10 bg-white pl-12 pr-10 py-4 text-sm text-black outline-none transition-all duration-300 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-400 focus:border-transparent dark:border-white/10 dark:bg-black/60 dark:text-white dark:placeholder:text-gray-500 shadow-inner"
+                    className="flex-1 rounded-2xl border border-black/10 bg-white pl-12 pr-10 py-4 text-sm text-black outline-none transition-all duration-300 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                     value={username}
                     onChange={(e) => {
                       let val = e.target.value;
@@ -292,7 +285,7 @@ export default function LandingPage() {
             </form>
           </div>
         </section>
-        
+
         <FeatureCardsSection>
           <WallOfLove />
         </FeatureCardsSection>

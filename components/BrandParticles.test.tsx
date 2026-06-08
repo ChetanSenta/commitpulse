@@ -18,7 +18,7 @@ vi.mock('framer-motion', () => ({
         data-animate={JSON.stringify(animate)}
         data-transition={JSON.stringify(transition)}
       />
-    ))
+    )),
   },
   useReducedMotion: () => mockReducedMotion,
   AnimatePresence: ({ children }: { children: React.ReactNode }) => <>{children}</>,

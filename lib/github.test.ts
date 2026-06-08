@@ -2511,4 +2511,3 @@ describe('getWrappedData weekendRatio', () => {
     expect(result.weekendRatio).toBe(0);
   });
 });
-
