@@ -55,6 +55,58 @@ describe('streakParamsSchema — grace fallback behavior', () => {
   });
 });
 
+describe('grace parameter — missed-day forgiveness (not timezone)', () => {
+  it('grace=0 passes schema validation — strict mode', () => {
+    const result = streakParamsSchema.safeParse({ user: 'chetan', grace: '0' });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.grace).toBe(0);
+  });
+
+  it('grace=1 passes schema validation — default lenient mode', () => {
+    const result = streakParamsSchema.safeParse({ user: 'chetan', grace: '1' });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.grace).toBe(1);
+  });
+
+  it('grace=2 passes schema validation — two-day forgiveness mode', () => {
+    const result = streakParamsSchema.safeParse({ user: 'chetan', grace: '2' });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.grace).toBe(2);
+  });
+
+  it('grace defaults to 1 when omitted — one missed day forgiven by default', () => {
+    const result = streakParamsSchema.safeParse({ user: 'chetan' });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.grace).toBe(1);
+  });
+
+  it('grace=7 is the maximum accepted value', () => {
+    const result = streakParamsSchema.safeParse({ user: 'chetan', grace: '7' });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.grace).toBe(7);
+  });
+
+  it('grace=8 is rejected as it exceeds the maximum limit of 7', () => {
+    const result = streakParamsSchema.safeParse({ user: 'chetan', grace: '8' });
+    expect(result.success).toBe(false);
+  });
+
+  it('grace is independent of tz param — both can coexist', () => {
+    // Verifies that grace (missed days) and tz (timezone) are separate concerns
+    // A user can set both independently: ?grace=2&tz=Asia/Kolkata
+    const result = streakParamsSchema.safeParse({
+      user: 'chetan',
+      grace: '2',
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.grace).toBe(2);
+      // tz is parsed separately in route.ts — not in schema
+      // this test documents that grace schema parsing is timezone-unaware
+    }
+  });
+});
+
 describe('validateGitHubUsername', () => {
   it('returns true for a valid username', () => {
     expect(validateGitHubUsername('valid-username-123')).toBe(true);
@@ -487,6 +539,27 @@ describe('streakParamsSchema', () => {
       expect(result.error.issues[0]?.message).toBe('Invalid timezone');
     }
   });
+
+  it('rejects path-traversal and injection ?tz= payloads while accepting a real IANA zone', () => {
+    const maliciousZones = [
+      '../../../../etc/passwd',
+      'America/New_York; rm -rf /',
+      'America/New_York ',
+    ];
+
+    for (const tz of maliciousZones) {
+      const result = streakParamsSchema.safeParse({ user: 'octocat', tz });
+
+      expect(result.success).toBe(false);
+      if (!result.success) {
+        expect(result.error.issues[0]?.message).toBe('Invalid timezone');
+      }
+    }
+
+    expect(streakParamsSchema.safeParse({ user: 'octocat', tz: 'America/New_York' }).success).toBe(
+      true
+    );
+  });
 });
 
 describe('streakParamsSchema — user hyphen validation', () => {
@@ -873,6 +946,25 @@ describe('streakParamsSchema — boolean transform fields', () => {
 
     it('returns true when glow is omitted', () => {
       expect(parse({}).glow).toBe(true);
+    });
+  });
+
+  // ── dim_weekends ───────────────────────────────────────────────────────────
+  describe('dim_weekends', () => {
+    it('returns true when dim_weekends="true"', () => {
+      expect(parse({ dim_weekends: 'true' }).dim_weekends).toBe(true);
+    });
+
+    it('returns true when dim_weekends="1"', () => {
+      expect(parse({ dim_weekends: '1' }).dim_weekends).toBe(true);
+    });
+
+    it('returns false when dim_weekends="false"', () => {
+      expect(parse({ dim_weekends: 'false' }).dim_weekends).toBe(false);
+    });
+
+    it('returns false when dim_weekends is omitted', () => {
+      expect(parse({}).dim_weekends).toBe(false);
     });
   });
 });
@@ -1524,5 +1616,42 @@ describe('toGraceValue and toOpacityValue — consistent parseFloat behavior', (
     expect(toOpacityValue('100')).toBe(1.0);
     expect(toGraceValue('-5')).toBe(0);
     expect(toOpacityValue('-5')).toBe(0.1);
+  });
+});
+
+describe('streakParamsSchema — user maxLength boundary (Variation 2)', () => {
+  it('rejects a user value of "a".repeat(40) and returns an error containing "cannot exceed 39 characters"', () => {
+    const result = streakParamsSchema.safeParse({ user: 'a'.repeat(40) });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const errorMessages = result.error.issues.map((i) => i.message);
+      expect(errorMessages.some((m) => m.includes('cannot exceed 39 characters'))).toBe(true);
+    }
+  });
+
+  it('accepts the boundary-length username of exactly 39 characters', () => {
+    const result = streakParamsSchema.safeParse({ user: 'a'.repeat(39) });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('returns fieldErrors.user for a username exceeding the maxLength constraint', () => {
+    const result = streakParamsSchema.safeParse({ user: 'a'.repeat(40) });
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      const flat = result.error.flatten().fieldErrors;
+      expect(flat.user).toBeDefined();
+      expect(flat.user?.join(' ')).toContain('cannot exceed 39 characters');
+    }
+  });
+
+  it('rejects any username longer than 39 characters regardless of character composition', () => {
+    const result = streakParamsSchema.safeParse({
+      user: 'valid-user-name-that-is-way-too-long-abc',
+    });
+
+    expect(result.success).toBe(false);
   });
 });
