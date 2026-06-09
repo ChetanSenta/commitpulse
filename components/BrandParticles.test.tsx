@@ -29,7 +29,10 @@ ForwardedMotionDiv.displayName = 'MotionDiv';
 
 vi.mock('framer-motion', () => ({
   motion: {
-    div: ({ children, ...props }: any) => <div {...props}>{children}</div>,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    div: ({ children, ...props }: { children: React.ReactNode; [key: string]: any }) => (
+      <div {...props}>{children}</div>
+    ),
   },
   useReducedMotion: () => false,
   AnimatePresence: ({ children }: { children: React.ReactNode }) => children,
