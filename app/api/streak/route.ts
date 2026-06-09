@@ -208,6 +208,12 @@ export async function GET(request: Request) {
     const borderParam = searchParams.get('border');
     const sanitizedBorder = borderParam ? borderParam.replace(/[^a-fA-F0-9]/g, '') : undefined;
     const animate = searchParams.get('animate') !== 'false';
+    // Validate and clamp the speed param to prevent broken SVG animation
+    const rawSpeedNum = speed ? parseFloat(String(speed)) : NaN;
+    const validatedSpeed =
+      !isNaN(rawSpeedNum) && isFinite(rawSpeedNum) && rawSpeedNum >= 1 && rawSpeedNum <= 60
+        ? `${rawSpeedNum}s`
+        : '8s';
     const params: BadgeParams = {
       user: targetEntity,
       bg: isAutoTheme ? selectedTheme.bg : bg || selectedTheme.bg,
@@ -215,7 +221,7 @@ export async function GET(request: Request) {
       accent: isAutoTheme ? selectedTheme.accent : accent || selectedTheme.accent,
       border: sanitizedBorder,
       radius,
-      speed,
+      speed: validatedSpeed,
       scale,
       font,
       autoTheme: isAutoTheme,
