@@ -331,9 +331,11 @@ export function aggregateCalendars(calendars: ContributionCalendar[]): Contribut
     });
   }
 
-  // Deep clone the base calendar so we don't mutate the original object
-  // Deep clone the base calendar so we don't mutate the original object
-  const aggregatedBase = JSON.parse(JSON.stringify(baseCalendar)) as ContributionCalendar;
+  // Deep clone the base calendar so we don't mutate the original object.
+  // Uses structuredClone() (native in Node 18+) instead of the
+  // JSON.parse(JSON.stringify()) anti-pattern which silently drops
+  // undefined values and Date objects during serialization.
+  const aggregatedBase = structuredClone(baseCalendar);
 
   aggregatedBase.totalContributions = totalContributions;
 
