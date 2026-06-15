@@ -583,8 +583,19 @@ export async function GET(request: Request) {
 
 type ParseResult = ReturnType<typeof streakParamsSchema.safeParse>;
 
+function sanitizeErrorMessage(message: string): string {
+  if (message.includes('ZodError') || message.includes('zod')) {
+    return 'Invalid request parameters';
+  }
+  if (message.includes('schema') || message.includes('Schema')) {
+    return 'Invalid request parameters';
+  }
+  return message;
+}
+
 function buildErrorResponse(error: unknown, parseResult: ParseResult): NextResponse {
-  const message = error instanceof Error ? error.message : String(error);
+  const rawMessage = error instanceof Error ? error.message : String(error);
+  const message = sanitizeErrorMessage(rawMessage);
 
   if (parseResult.success && parseResult.data.format === 'json') {
     const isNotFound =
