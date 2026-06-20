@@ -103,7 +103,7 @@ export default function ContributorsSearch({
               aria-label="Search contributors by name"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full bg-transparent px-4 py-3.5 text-base text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none font-medium tracking-wide"
+              className="w-full bg-transparent px-4 py-3.5 text-base text-black dark:text-white placeholder:text-zinc-400 dark:placeholder:text-zinc-500 outline-none focus-visible:outline-none font-medium tracking-wide"
             />
             {search && (
               <button
