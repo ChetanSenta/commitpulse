@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { Play, Pause, RotateCcw } from 'lucide-react';
 import type { ActivityData } from '@/types/dashboard';
 
@@ -73,6 +73,16 @@ export default function ContributionCity3D({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const hoverDataRef = useRef<
+    Array<{
+      x: number;
+      y: number;
+      count: number;
+      date: string;
+      radius: number;
+    }>
+  >([]);
+
   // Camera state – angles in radians
   const [isDragging, setIsDragging] = useState(false);
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
@@ -93,22 +103,69 @@ export default function ContributionCity3D({
 
   const palette = THEME_PALETTES[theme] ?? DEFAULT_PALETTE;
 
+  // ── Replay My Year state ───────────────────────────────────────────────────
+  const [isReplaying, setIsReplaying] = useState(false);
+  const [replayIndex, setReplayIndex] = useState<number | null>(null);
+  const replayTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const totalDays = useMemo(() => data.slice(-days).length, [data, days]);
+
+  const stopReplay = useCallback(() => {
+    if (replayTimerRef.current) clearTimeout(replayTimerRef.current);
+    setIsReplaying(false);
+    setReplayIndex(null);
+  }, []);
+
+  const startReplay = useCallback(() => {
+    if (replayTimerRef.current) clearTimeout(replayTimerRef.current);
+    setIsReplaying(true);
+    setReplayIndex(1);
+  }, []);
+
+  // Advance the replay frame-by-frame
+  useEffect(() => {
+    if (!isReplaying || replayIndex === null) return;
+    if (replayIndex >= totalDays) {
+      // Finished – hold full view for a moment then stop
+      replayTimerRef.current = setTimeout(() => stopReplay(), 800);
+      return;
+    }
+    // Speed: faster at the start, steady in the middle — ~12ms per day
+    const delay = replayIndex < 10 ? 30 : 12;
+    replayTimerRef.current = setTimeout(() => {
+      setReplayIndex((prev) => (prev !== null ? prev + 1 : null));
+    }, delay);
+    return () => {
+      if (replayTimerRef.current) clearTimeout(replayTimerRef.current);
+    };
+  }, [isReplaying, replayIndex, totalDays, stopReplay]);
+
+  // Cleanup on unmount
+  useEffect(
+    () => () => {
+      if (replayTimerRef.current) clearTimeout(replayTimerRef.current);
+    },
+    []
+  );
+
   // ── Build cube specs from ActivityData ─────────────────────────────────────
   const cubes = useCallback((): CubeSpec[] => {
     const recent = data.slice(-days);
+    // When replaying, slice to current frame; zero out future cubes for clean build-up
     const max = Math.max(...recent.map((d) => d.count), 1);
 
     const visibleData = timeLapseMode ? recent.slice(0, playbackIndex) : recent;
+    const visibleCount = replayIndex !== null ? replayIndex : visibleData.length;
 
     return visibleData.map((d, i) => ({
-      col: Math.floor(i / 7), // week column
-      row: i % 7, // day-of-week row
-      height: d.count === 0 ? 0.04 : 0.1 + 0.9 * (d.count / max),
-      count: d.count,
+      col: Math.floor(i / 7),
+      row: i % 7,
+      height: i >= visibleCount ? 0.04 : d.count === 0 ? 0.04 : 0.1 + 0.9 * (d.count / max),
+      count: i >= visibleCount ? 0 : d.count,
       date: d.date,
-      intensity: d.intensity,
+      intensity: i >= visibleCount ? 0 : d.intensity,
     }));
-  }, [data, days, timeLapseMode, playbackIndex]);
+  }, [data, days, timeLapseMode, playbackIndex, replayIndex]);
 
   // ── Draw ───────────────────────────────────────────────────────────────────
   const draw = useCallback(() => {
@@ -172,6 +229,7 @@ export default function ContributionCity3D({
       const db = b.col * sinY + b.row * cosY;
       return da - db;
     });
+    hoverDataRef.current = [];
 
     for (const cube of sorted) {
       const { col, row, height } = cube;
@@ -192,6 +250,16 @@ export default function ContributionCity3D({
       const t1 = project(wx + 1, cubeHWorld, wz);
       const t2 = project(wx + 1, cubeHWorld, wz + 1);
       const t3 = project(wx, cubeHWorld, wz + 1);
+      const centerX = (t0.cx + t1.cx + t2.cx + t3.cx) / 4;
+      const centerY = (t0.cy + t1.cy + t2.cy + t3.cy) / 4;
+
+      hoverDataRef.current.push({
+        x: centerX,
+        y: centerY,
+        count: cube.count,
+        date: cube.date,
+        radius: tileW * 0.45,
+      });
 
       // Intensity-based tint
       const intFactor = cube.intensity / 4;
@@ -337,13 +405,49 @@ export default function ContributionCity3D({
   };
 
   const onPointerMove = (e: React.PointerEvent) => {
-    if (!isDragging) return;
-    const cam = cameraRef.current;
-    const dx = e.clientX - cam.dragStartX;
-    const dy = e.clientY - cam.dragStartY;
-    cam.rotY = cam.startRotY + dx * 0.008;
-    cam.tiltX = Math.max(0.1, Math.min(1.2, cam.startTiltX + dy * 0.005));
-    draw();
+    if (isDragging) {
+      const cam = cameraRef.current;
+      const dx = e.clientX - cam.dragStartX;
+      const dy = e.clientY - cam.dragStartY;
+
+      cam.rotY = cam.startRotY + dx * 0.008;
+      cam.tiltX = Math.max(0.1, Math.min(1.2, cam.startTiltX + dy * 0.005));
+
+      draw();
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const rect = canvas.getBoundingClientRect();
+
+    const mouseX = e.clientX - rect.left;
+    const mouseY = e.clientY - rect.top;
+
+    const hit = hoverDataRef.current.find((tower) => {
+      const dx = mouseX - tower.x;
+      const dy = mouseY - tower.y;
+
+      return Math.sqrt(dx * dx + dy * dy) <= tower.radius;
+    });
+
+    if (hit) {
+      const padding = 80;
+
+      const safeX = Math.max(padding, Math.min(hit.x, rect.width - padding));
+
+      const safeY = Math.max(40, hit.y);
+
+      setTooltip({
+        x: safeX,
+        y: safeY,
+        count: hit.count,
+        date: hit.date,
+      });
+    } else {
+      setTooltip(null);
+    }
   };
 
   const onPointerUp = () => setIsDragging(false);
@@ -388,6 +492,7 @@ export default function ContributionCity3D({
           className="w-full h-full"
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
+          onPointerLeave={() => setTooltip(null)}
           onPointerUp={onPointerUp}
           onPointerCancel={onPointerUp}
           onWheel={onWheel}
@@ -396,6 +501,65 @@ export default function ContributionCity3D({
           style={{ display: 'block' }}
         />
       </div>
+
+      {/* Replay My Year button */}
+      <div className="absolute top-3 left-4 flex items-center gap-2">
+        <button
+          onClick={isReplaying ? stopReplay : startReplay}
+          className="flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-medium transition-all"
+          style={{
+            background: isReplaying ? `${palette.accent}22` : `${palette.accent}18`,
+            color: palette.accent,
+            border: `1px solid ${palette.accent}44`,
+          }}
+          title={isReplaying ? 'Stop replay' : 'Replay My Year'}
+        >
+          {isReplaying ? (
+            // Stop icon
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden>
+              <rect x="1" y="1" width="8" height="8" rx="1" />
+            </svg>
+          ) : (
+            // Play icon
+            <svg width="10" height="10" viewBox="0 0 10 10" fill="currentColor" aria-hidden>
+              <polygon points="2,1 9,5 2,9" />
+            </svg>
+          )}
+          {isReplaying ? 'Stop' : 'Replay My Year'}
+        </button>
+
+        {/* Month label during replay */}
+        {isReplaying &&
+          replayIndex !== null &&
+          (() => {
+            const recent = data.slice(-days);
+            const currentDay = recent[Math.min(replayIndex - 1, recent.length - 1)];
+            const month = currentDay
+              ? new Date(currentDay.date).toLocaleString('default', {
+                  month: 'short',
+                  year: 'numeric',
+                })
+              : '';
+            return (
+              <span className="text-xs font-mono opacity-60" style={{ color: palette.accent }}>
+                {month}
+              </span>
+            );
+          })()}
+      </div>
+
+      {/* Progress bar */}
+      {isReplaying && replayIndex !== null && (
+        <div
+          className="absolute bottom-0 left-0 h-0.5 transition-all"
+          style={{
+            width: `${(replayIndex / totalDays) * 100}%`,
+            background: palette.accent,
+            borderRadius: '0 2px 2px 0',
+            opacity: 0.7,
+          }}
+        />
+      )}
 
       {/* Tooltip */}
       {tooltip && (

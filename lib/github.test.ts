@@ -591,6 +591,7 @@ describe('fetchUserRepos', () => {
           id: 12345,
           private: false,
           owner: { login: 'octocat' },
+          homepage: 'https://some-repo.vercel.app',
         },
       ])
     );
@@ -601,7 +602,11 @@ describe('fetchUserRepos', () => {
     expect(result[0].language).toBe('TypeScript');
     expect(result[0].id).toBeUndefined();
     expect(result[0].private).toBeUndefined();
-    expect(result[0].owner).toBeUndefined();
+    // owner and homepage are intentionally kept — required for the
+    // Production Deployments feature to resolve {owner}/{repo} paths
+    // and fall back to a configured live URL.
+    expect(result[0].owner).toEqual({ login: 'octocat' });
+    expect(result[0].homepage).toBe('https://some-repo.vercel.app');
   });
 
   it('returns a full three-repo payload with the expected star counts and languages', async () => {
@@ -819,10 +824,12 @@ describe('forceRefresh write-back', () => {
   afterEach(() => vi.restoreAllMocks());
 
   it('fetchGitHubContributions: forceRefresh writes back so a later normal read is a cache hit', async () => {
-    vi.mocked(fetch).mockResolvedValue(
-      mockResponse({
-        data: { user: { contributionsCollection: { contributionCalendar: mockCalendar } } },
-      })
+    vi.mocked(fetch).mockImplementation(() =>
+      Promise.resolve(
+        mockResponse({
+          data: { user: { contributionsCollection: { contributionCalendar: mockCalendar } } },
+        })
+      )
     );
 
     await fetchGitHubContributions('octocat', { forceRefresh: true });
@@ -1204,7 +1211,64 @@ describe('getFullDashboardData', () => {
     ]);
     expect(result.insights).toBeDefined();
   });
+  it('forwards the per-user token to deployment tracker requests instead of using the shared pool', async () => {
+    const capturedAuthHeaders: string[] = [];
 
+    vi.mocked(fetch).mockImplementation(async (url: RequestInfo | URL, init?: RequestInit) => {
+      const urlStr = typeof url === 'string' ? url : (url?.toString() ?? '');
+
+      if (urlStr.includes('/actions/runs') || urlStr.includes('/deployments')) {
+        const headers = init?.headers as Record<string, string> | undefined;
+        capturedAuthHeaders.push(headers?.Authorization ?? '');
+        if (urlStr.includes('/actions/runs')) {
+          return mockResponse({ workflow_runs: [] });
+        }
+        return mockResponse([]);
+      }
+      if (urlStr.includes('/users/octocat/repos')) {
+        return mockResponse([
+          {
+            name: 'repo1',
+            stargazers_count: 10,
+            language: 'TypeScript',
+            fork: false,
+            owner: { login: 'octocat' },
+          },
+        ]);
+      }
+      if (urlStr.includes('/users/octocat')) {
+        return mockResponse({
+          login: 'octocat',
+          name: 'The Octocat',
+          avatar_url: 'avatar.png',
+          public_repos: 1,
+          followers: 1,
+          following: 1,
+          created_at: '2020-01-01T00:00:00Z',
+          bio: null,
+          location: null,
+        });
+      }
+      return mockResponse({
+        data: {
+          user: {
+            contributionsCollection: {
+              contributionCalendar: mockCalendar,
+              commitContributionsByRepository: [],
+            },
+          },
+        },
+      });
+    });
+
+    const userToken = 'user-personal-oauth-token';
+    await getFullDashboardData('octocat', { token: userToken });
+
+    expect(capturedAuthHeaders.length).toBeGreaterThan(0);
+    for (const authHeader of capturedAuthHeaders) {
+      expect(authHeader).toBe(`bearer ${userToken}`);
+    }
+  });
   it('caps developerScore at 100 for extreme profile metrics', async () => {
     const saturatedCalendar: ContributionCalendar = {
       totalContributions: 500,

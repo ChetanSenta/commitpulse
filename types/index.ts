@@ -245,8 +245,8 @@ export interface BadgeParams {
   /** Duration of the radar scan line animation (e.g. '4s', '8s', '12s'). Defaults to '8s'. */
   speed: SpeedString;
 
-  /** Animation style for the isometric towers on load: 'rise' (default), 'fade', 'slide', or 'none'. */
-  entrance?: 'rise' | 'fade' | 'slide' | 'none';
+  /** Animation style for the isometric towers on load: 'rise' (default), 'fade', 'slide', 'wave', 'bounce', or 'none'. */
+  entrance?: 'rise' | 'fade' | 'slide' | 'wave' | 'bounce' | 'none';
 
   /** Tower height scaling algorithm. 'linear' scales proportionally; 'log' uses logarithmic scale for high contributors. Defaults to 'linear'. */
   scale: Scale;
@@ -262,6 +262,9 @@ export interface BadgeParams {
 
   /** When true, automatically selects a theme based on the viewer's system color scheme. */
   autoTheme?: boolean;
+
+  /** Predefined theme name to use for the badge color palette. Overridden by explicit bg/text/accent parameters. */
+  theme?: string;
 
   /** When true, hides the username title from the badge. */
   hide_title?: boolean;
@@ -284,7 +287,10 @@ export interface BadgeParams {
     | 'skyline'
     | 'languages'
     | 'constellation'
-    | 'radar';
+    | 'radar'
+    | 'doughnut'
+    | 'pie'
+    | 'activity_graph';
 
   /** Format for the monthly delta indicator. 'percent' shows %, 'absolute' shows raw count, 'both' shows both. */
   delta_format?: 'percent' | 'absolute' | 'both';

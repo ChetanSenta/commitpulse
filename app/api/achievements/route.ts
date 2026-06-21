@@ -11,6 +11,10 @@ import type {
   AchievementsResponse,
 } from '@/types/achievements';
 import { getUserGitHubToken } from '@/lib/githubtoken';
+import { getClientIp } from '@/utils/getClientIp';
+import { RateLimiter } from '@/lib/rate-limit';
+
+const achievementsLimiter = new RateLimiter(10, 60_000, 1);
 
 const ACHIEVEMENT_DEFS: AchievementDef[] = [
   // 🔥 Contribution
@@ -548,6 +552,17 @@ function computeDeveloperLevel(totalXp: number): {
 }
 
 export async function GET(request: Request) {
+  const ip = getClientIp(request);
+  const rateLimitKey =
+    ip && ip !== 'unknown' ? ip : `unknown:${request.headers.get('user-agent') ?? 'no-agent'}`;
+
+  if (!(await achievementsLimiter.check(rateLimitKey))) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429 }
+    );
+  }
+
   const { searchParams } = new URL(request.url);
   const username = searchParams.get('username');
 
@@ -591,6 +606,7 @@ export async function GET(request: Request) {
       name: string;
       description: string | null;
       stargazerCount: number;
+      createdAt: string;
     }>;
     const aiRepoCount = popularRepos.filter((repo) =>
       AI_KEYWORDS.some(
@@ -601,7 +617,11 @@ export async function GET(request: Request) {
     ).length;
     let topStarDensity = 0;
     for (const repo of popularRepos) {
-      const density = repo.stargazerCount / 6;
+      const ageInYears = Math.max(
+        0.1,
+        (Date.now() - new Date(repo.createdAt).getTime()) / (1000 * 60 * 60 * 24 * 365.25)
+      );
+      const density = repo.stargazerCount / ageInYears;
       if (density > topStarDensity) topStarDensity = density;
     }
 

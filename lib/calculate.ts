@@ -393,14 +393,7 @@ export function aggregateCalendars(
     return { totalContributions: 0, weeks: [] };
   }
 
-  // manual clone is way faster than structuredClone for huge nested arrays
-  const aggregatedBase: ContributionCalendar = {
-    ...baseCalendar,
-    weeks: (baseCalendar.weeks || []).map((w) => ({
-      ...w,
-      contributionDays: (w?.contributionDays || []).map((d) => ({ ...d })),
-    })),
-  };
+  const aggregatedBase: ContributionCalendar = structuredClone(baseCalendar);
 
   aggregatedBase.totalContributions = totalContributions;
 
@@ -525,7 +518,7 @@ export function calculateWrappedStats(calendar?: ContributionCalendar | null) {
     monthCounts[month] = (monthCounts[month] || 0) + count;
 
     // 3. Weekday vs Weekend grind
-    const dayOfWeek = dateObj.getUTCDay(); // 0 is Sunday, 6 is Saturday
+    const dayOfWeek = dateObj.getUTCDay(); // 0 = Sunday, 6 = Saturday (UTC)
     if (dayOfWeek === 0 || dayOfWeek === 6) {
       weekendCommits += count;
     } else {
