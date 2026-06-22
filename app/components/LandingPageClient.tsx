@@ -8,6 +8,8 @@ import { useRef, useState, useEffect } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { gsap } from 'gsap';
 import { useGSAP } from '@gsap/react';
+import { jsPDF } from 'jspdf';
+import 'svg2pdf.js';
 
 import {
   Flame,
@@ -380,6 +382,48 @@ export default function LandingPageClient() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const DownloadPDF = async () => {
+    try {
+      const response = await fetch(badgeUrl);
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch SVG');
+      }
+
+      const svgText = await response.text();
+
+      const container = document.createElement('div');
+      container.innerHTML = svgText;
+
+      const svgElement = container.querySelector('svg');
+
+      if (!svgElement) {
+        throw new Error('SVG element not found');
+      }
+
+      const pdf = new jsPDF({
+        orientation: 'landscape',
+        unit: 'pt',
+        format: 'a4',
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      await pdf.svg(svgElement, {
+        x: 10,
+        y: 10,
+        width: pageWidth - 20,
+        height: pageHeight - 20,
+      });
+
+      pdf.save(`${previewUsername}-commitpulse.pdf`);
+    } catch (error) {
+      console.error('PDF export failed:', error);
+      alert('Failed to generate PDF');
+    }
   };
 
   const badgeLoaded = badgeResult?.username === previewUsername && badgeResult?.status === 'loaded';
@@ -874,12 +918,23 @@ export default function LandingPageClient() {
                         }
                       />
                       {badgeLoaded && (
-                        <button
-                          onClick={DownloadSVG}
-                          className="mt-6 px-4 py-2 rounded-lg bg-sky-600 text-sm font-medium text-white hover:bg-sky-800 transition-colors"
-                        >
-                          {t('customize.export.download_svg', { defaultValue: 'Download SVG' })}
-                        </button>
+                        <div className="mt-6 flex gap-3 justify-center">
+                          <button
+                            onClick={DownloadSVG}
+                            className="px-4 py-2 rounded-lg bg-sky-600 text-sm font-medium text-white hover:bg-sky-800 transition-colors"
+                          >
+                            {t('customize.export.download_svg', {
+                              defaultValue: 'Download SVG',
+                            })}
+                          </button>
+
+                          <button
+                            onClick={DownloadPDF}
+                            className="px-4 py-2 rounded-lg bg-emerald-600 text-sm font-medium text-white hover:bg-emerald-800 transition-colors"
+                          >
+                            Download PDF
+                          </button>
+                        </div>
                       )}
                     </>
                   )}
