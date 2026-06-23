@@ -359,7 +359,7 @@ const baseStreakParamsSchema = z.object({
     }),
 
   // Silently fall back to 'linear' for unknown values (matches old behavior)
-  scale: z.enum(['linear', 'log']).catch('linear').default('linear'),
+  scale: z.enum(['linear', 'log', 'sqrt']).catch('linear').default('linear'),
 
   // Invalid size values fall back to 'medium' to preserve badge rendering.
   size: z.enum(['small', 'medium', 'large']).catch('medium').default('medium'),

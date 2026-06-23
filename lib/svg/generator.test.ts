@@ -153,6 +153,15 @@ describe('generateSVG', () => {
     expect(svg).toContain('svg');
   });
 
+  it('handles sqrt scale parameter correctly', () => {
+    const svg = generateSVG(
+      mockStats,
+      { user: 'avi', scale: 'sqrt' } as unknown as BadgeParams,
+      mockCalendar
+    );
+    expect(svg).toContain('svg');
+  });
+
   it('uses transparent background when hideBackground is true', () => {
     const svg = generateSVG(
       mockStats,

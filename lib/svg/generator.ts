@@ -2826,6 +2826,8 @@ function renderSkylineSVG(
       if (params.scale === 'log') {
         const logMax = Math.log2(maxWeeklyCount + 1) || 1;
         normalized = Math.log2(count + 1) / logMax;
+      } else if (params.scale === 'sqrt') {
+        normalized = Math.sqrt(count / maxWeeklyCount);
       } else {
         normalized = count / maxWeeklyCount;
       }
