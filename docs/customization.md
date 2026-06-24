@@ -55,6 +55,7 @@ URL Parameter > Theme Default > System Fallback
 | `gradient`          | `boolean` | No         | `false`                        | Opt-in to show volumetric gradients on the monolith floor                                                                                                                                                                                  |
 | `gradient_stops`    | `string`  | No         | —                              | Comma-separated list of hex colors (e.g. `ff6b35,ff007f`) for custom floor gradient. Requires `gradient=true` and at least two valid colors. Hex prefix `#` is optional.                                                                   |
 | `gradient_dir`      | `string`  | No         | `vertical`                     | Direction of the volumetric floor gradient: `vertical` (default), `horizontal`, or `diagonal`.                                                                                                                                             |
+| `minify`            | `boolean` | No         | `true`                         | Enable lightweight SVG minification to reduce payload size by 15–30%. Accepts `true`/`1` (enable) or `false`/`0` (disable).                                                                                                                |
 
 > All parameters below are optional except `user`. Append them to the base URL as query string key-value pairs (e.g. `?user=YOUR_USERNAME&theme=neon&size=large`). Boolean parameters accept `true` or `false`. Hex color values are provided **without** the `#` prefix.
 
@@ -96,6 +97,7 @@ URL Parameter > Theme Default > System Fallback
 | `dim_weekends`    | Dim weekend towers (Saturdays and Sundays)                                                      | `false`            | `true`, `false`                                                                 | `?dim_weekends=true`       |
 | `opacity`         | Global opacity scalar for tower fill                                                            | `1.0`              | `0.1`–`1.0`                                                                     | `?opacity=0.8`             |
 | `gradient`        | Show volumetric gradients on the floor                                                          | `false`            | `true`, `false`                                                                 | `?gradient=true`           |
+| `minify`          | Enable SVG minification and payload optimization                                                | `true`             | `true`, `false`                                                                 | `?minify=false`            |
 
 ---
 
