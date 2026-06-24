@@ -271,7 +271,7 @@ describe('fetchGitHubContributions', () => {
     vi.mocked(fetch).mockResolvedValue(mockResponse({ message: 'Internal Server Error' }, 500));
 
     await expect(fetchGitHubContributions('octocat')).rejects.toThrow(
-      'GitHub GraphQL API returned status 500'
+      'GitHub API error: status 500'
     );
   });
 
@@ -279,7 +279,7 @@ describe('fetchGitHubContributions', () => {
     vi.mocked(fetch).mockResolvedValue(mockResponse({ message: 'Unauthorized' }, 401));
 
     await expect(fetchGitHubContributions('octocat')).rejects.toThrow(
-      'GitHub PAT is invalid or missing'
+      'GitHub authentication failed'
     );
   });
 
