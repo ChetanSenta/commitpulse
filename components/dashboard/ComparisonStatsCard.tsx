@@ -11,6 +11,7 @@ import {
   Award,
   LucideIcon,
 } from 'lucide-react';
+import EmptyState from './EmptyState';
 
 const iconMap: Record<string, LucideIcon> = {
   Flame,
@@ -39,6 +40,9 @@ export default function ComparisonStatsCard({
   labelB,
   icon,
 }: ComparisonStatsCardProps) {
+  if (valueA === 0 && valueB === 0) {
+    return <EmptyState message={`No ${title.toLowerCase()} found to compare`} />;
+  }
   const IconComponent = iconMap[icon] || Award;
 
   const total = valueA + valueB;
