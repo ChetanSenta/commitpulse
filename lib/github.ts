@@ -1335,6 +1335,7 @@ export type OrgDashboardData = {
     totalContributions: number;
   };
   calendar: ContributionCalendar;
+  individualCalendars?: { user: string; calendar: ContributionCalendar }[];
   repoContributions: RepoContribution[];
   isPartial: boolean;
 };
@@ -1365,6 +1366,7 @@ export async function getOrgDashboardData(
 
   let calendars: ContributionCalendar[] = [];
   const repoContributions: RepoContribution[] = [];
+  const individualCalendars: { user: string; calendar: ContributionCalendar }[] = [];
   try {
     calendars = (
       await runCappedConcurrency(activeMembers, 5, (member) => {
@@ -1374,6 +1376,7 @@ export async function getOrgDashboardData(
             if (data.repoContributions) {
               repoContributions.push(...data.repoContributions);
             }
+            individualCalendars.push({ user: member, calendar: data.calendar });
             return data.calendar;
           })
           .catch(() => null);
@@ -1412,6 +1415,7 @@ export async function getOrgDashboardData(
       totalContributions: streakStats.totalContributions,
     },
     calendar: aggregatedCalendar,
+    individualCalendars,
     repoContributions,
     isPartial,
   };
