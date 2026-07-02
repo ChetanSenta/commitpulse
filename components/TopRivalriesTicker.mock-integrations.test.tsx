@@ -1,5 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import React, { useState, useEffect } from 'react';
 import TopRivalriesTicker, { RivalryItem } from './TopRivalriesTicker';
 import dbConnect from '@/lib/mongodb';
@@ -62,7 +62,7 @@ function TopRivalriesTickerAsyncContainer({
   onSuccess,
 }: TickerContainerProps) {
   const [rivalries, setRivalries] = useState<RivalryItem[] | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -83,7 +83,9 @@ function TopRivalriesTickerAsyncContainer({
 
       try {
         // 1. Mock standard asynchronous database connection
-        const db = await dbConnect();
+        const db = (await dbConnect()) as unknown as {
+          fetchTopRivalries: () => Promise<RivalryItem[]>;
+        };
 
         const queryPromise = db.fetchTopRivalries();
         const timeoutPromise = new Promise<never>((_, reject) =>
@@ -149,6 +151,10 @@ describe('TopRivalriesTicker — Asynchronous Service Layer Mocking & Local Cach
     vi.mocked(dbConnect).mockResolvedValue({
       fetchTopRivalries: mockFetchTopRivalries,
     } as unknown as Awaited<ReturnType<typeof dbConnect>>);
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
   });
 
   it('1. mocks standard database connection and retrieves results successfully', async () => {
@@ -236,20 +242,40 @@ describe('TopRivalriesTicker — Asynchronous Service Layer Mocking & Local Cach
   });
 
   it('4. verifies correct fallback procedures during fake database endpoint timeout blocks', async () => {
-    // Database query promise that hangs indefinitely
-    const slowPromise = new Promise<RivalryItem[]>(() => {});
-    mockFetchTopRivalries.mockReturnValue(slowPromise);
+    vi.useFakeTimers();
+    try {
+      // Database query promise that hangs indefinitely
+      const slowPromise = new Promise<RivalryItem[]>(() => {});
+      mockFetchTopRivalries.mockReturnValue(slowPromise);
 
-    render(<TopRivalriesTickerAsyncContainer timeoutMs={20} />);
+      render(<TopRivalriesTickerAsyncContainer timeoutMs={20} />);
 
-    // Wait until timeout failure kicks in and sets fallback procedure
-    await waitFor(() => {
+      // Verify loading overlay renders during pending state
+      expect(screen.getByTestId('loading-overlay')).toBeInTheDocument();
+
+      // Wait for useEffect's async dbConnect call to resolve and reach the timeoutPromise setup
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      // Now the timeout timer is registered. Let's advance timers to trigger it
+      act(() => {
+        vi.advanceTimersByTime(25);
+      });
+
+      // Flush microtasks to allow promise rejection handlers to process
+      await act(async () => {
+        await Promise.resolve();
+      });
+
+      // Verify loading overlay is removed after timeout triggers fallback
       expect(screen.queryByTestId('loading-overlay')).not.toBeInTheDocument();
-    });
-
-    expect(screen.getByTestId('error-message')).toHaveTextContent('Query timeout');
-    // Fallback procedure renders empty rivalries list message
-    expect(screen.getByText('No active rivalries')).toBeInTheDocument();
+      expect(screen.getByTestId('error-message')).toHaveTextContent('Query timeout');
+      // Fallback procedure renders empty rivalries list message
+      expect(screen.getByText('No active rivalries')).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('5. asserts complete cache sync is written on success callbacks', async () => {
