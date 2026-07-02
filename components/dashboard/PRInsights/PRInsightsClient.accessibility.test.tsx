@@ -113,6 +113,7 @@ describe('PRInsightsClient accessibility compliance', () => {
   });
 
   afterEach(() => {
+    localStorage.clear();
     vi.unstubAllGlobals();
   });
 

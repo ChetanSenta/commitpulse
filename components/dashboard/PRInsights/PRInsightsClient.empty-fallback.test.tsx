@@ -86,6 +86,7 @@ describe('PRInsightsClient - Edge Cases & Empty/Missing Inputs', () => {
   });
 
   afterEach(() => {
+    localStorage.clear();
     vi.unstubAllGlobals();
     vi.clearAllMocks();
   });
