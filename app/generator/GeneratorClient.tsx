@@ -82,8 +82,12 @@ export function GeneratorClient() {
           state={state}
           onNameChange={(v) => setState((s) => ({ ...s, name: v }))}
           onDescriptionChange={(v) => setState((s) => ({ ...s, description: v }))}
-          onTechsChange={(ids) => setState((s) => ({ ...s, selectedTechs: ids }))}
-          onSocialsChange={(ids) => setState((s) => ({ ...s, selectedSocials: ids }))}
+          onTechsChange={(ids) =>
+            setState((s) => ({ ...s, selectedTechs: Array.from(new Set(ids)) }))
+          }
+          onSocialsChange={(ids) =>
+            setState((s) => ({ ...s, selectedSocials: Array.from(new Set(ids)) }))
+          }
           onSocialLinkChange={(id, url) =>
             setState((s) => ({
               ...s,
