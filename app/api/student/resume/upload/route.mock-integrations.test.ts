@@ -11,7 +11,11 @@ vi.mock('@/utils/getClientIp', () => ({
 vi.mock('@/lib/rate-limit', () => {
   const RateLimiterMock = vi.fn();
   RateLimiterMock.prototype.check = vi.fn().mockResolvedValue(true);
-  return { RateLimiter: RateLimiterMock };
+  RateLimiterMock.prototype.checkWithResult = vi.fn().mockResolvedValue({ success: true, limit: 10, remaining: 9, reset: 0 });
+  return { 
+    RateLimiter: RateLimiterMock,
+    getRateLimitHeaders: vi.fn().mockReturnValue(new Headers())
+  };
 });
 
 vi.mock('@/lib/resume-parser', () => ({
@@ -77,7 +81,7 @@ describe('API Route: Student Resume Upload (Mock Integrations)', () => {
 
   it('2. should assert local cache layers (RateLimiter) block requests before triggering async services', async () => {
     // Arrange: Mock the RateLimiter cache to block the user
-    vi.mocked(RateLimiter.prototype.check).mockResolvedValueOnce(false);
+    vi.mocked(RateLimiter.prototype.checkWithResult).mockResolvedValueOnce({ success: false, limit: 10, remaining: 0, reset: 0 });
 
     const req = createMockRequest();
 
@@ -134,7 +138,7 @@ describe('API Route: Student Resume Upload (Mock Integrations)', () => {
     // Assert: Immediately fails validation (400)
     expect(res.status).toBe(400);
     expect(json.error).toMatch(/No resume file provided/i);
-    expect(RateLimiter.prototype.check).toHaveBeenCalled();
+    expect(RateLimiter.prototype.checkWithResult).toHaveBeenCalled();
     expect(parseResume).not.toHaveBeenCalled();
   });
 });
