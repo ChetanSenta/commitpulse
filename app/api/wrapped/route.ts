@@ -52,6 +52,7 @@ export async function GET(request: Request) {
       hide_background,
       width,
       height,
+      org,
     } = parseResult.data;
 
     const year = customYear || new Date().getFullYear().toString();
@@ -91,7 +92,7 @@ export async function GET(request: Request) {
     };
 
     // Fetch the wrapped stats for the year (calendar is included to avoid a duplicate API call)
-    const wrappedStats = await getWrappedData(user, year, { bypassCache: refresh });
+    const wrappedStats = await getWrappedData(user, year, { bypassCache: refresh, org });
 
     const svg = generateWrappedSVG(wrappedStats, params, year, wrappedStats.calendar);
 

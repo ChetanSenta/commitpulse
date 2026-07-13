@@ -376,6 +376,13 @@ export const githubParamsSchema = z.object({
       message: 'Invalid GitHub username',
     }),
   refresh: z.string().optional().transform(toRefreshFlag),
+  org: z
+    .string()
+    .max(39, { message: 'Organization name cannot exceed 39 characters' })
+    .regex(GITHUB_USERNAME_REGEX, {
+      message: 'Invalid organization name format',
+    })
+    .optional(),
 });
 
 export const compareParamsSchema = z
@@ -530,6 +537,13 @@ export const wrappedParamsSchema = z.object({
   hide_background: z.string().optional().transform(toBooleanFlag), // ✅ Fixed: was toRefreshFlag
   width: dimensionParam('width', 100, 1200),
   height: dimensionParam('height', 80, 800),
+  org: z
+    .string()
+    .max(39, { message: 'Organization name cannot exceed 39 characters' })
+    .regex(GITHUB_USERNAME_REGEX, {
+      message: 'Invalid organization name format',
+    })
+    .optional(),
 });
 
 export const notifyPostSchema = z.object({

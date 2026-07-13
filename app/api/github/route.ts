@@ -50,7 +50,7 @@ export async function GET(request: Request) {
     );
   }
 
-  const { username, refresh } = parseResult.data;
+  const { username, refresh, org } = parseResult.data;
 
   // 1. Quota awareness check - if remaining quota is low, disable manual refresh
   if (refresh && quotaMonitor.isQuotaLow()) {
@@ -105,7 +105,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const data = await getFullDashboardData(username, { bypassCache: shouldBypassCache });
+    const data = await getFullDashboardData(username, { bypassCache: shouldBypassCache, org });
 
     // 4. Stale-While-Revalidate background refresh for normal cached requests
     if (!shouldBypassCache) {

@@ -541,6 +541,55 @@ describe('fetchGitHubContributions', () => {
     expect(result.calendar.totalContributions).toBe(mockCalendar.totalContributions);
     expect(result.isOfflineFallback).toBe(true);
   });
+
+  it('correctly resolves organization Node ID and uses it in contributions query', async () => {
+    vi.mocked(fetch)
+      .mockResolvedValueOnce(
+        mockResponse({
+          data: {
+            organization: {
+              id: 'test-org-node-id',
+            },
+          },
+        })
+      )
+      .mockResolvedValueOnce(
+        mockResponse({
+          data: {
+            user: {
+              contributionsCollection: {
+                contributionCalendar: mockCalendar,
+                commitContributionsByRepository: [],
+              },
+            },
+          },
+        })
+      );
+
+    const result = await fetchGitHubContributions('octocat', {
+      org: 'github-org',
+      bypassCache: true,
+    });
+    expect(result.calendar.totalContributions).toBe(mockCalendar.totalContributions);
+
+    // Verify first call to resolve organization ID
+    expect(fetch).toHaveBeenNthCalledWith(
+      1,
+      'https://api.github.com/graphql',
+      expect.objectContaining({
+        body: expect.stringContaining('"variables":{"login":"github-org"}'),
+      })
+    );
+
+    // Verify second call to query contributions with organizationID
+    expect(fetch).toHaveBeenNthCalledWith(
+      2,
+      'https://api.github.com/graphql',
+      expect.objectContaining({
+        body: expect.stringContaining('"orgId":"test-org-node-id"'),
+      })
+    );
+  });
 });
 
 describe('fetchUserProfile', () => {
@@ -1811,6 +1860,18 @@ describe('cacheKey', () => {
     const keyA = cacheKey('contributions', 'octocat', '2024-01-01', '2024-06-30');
     const keyB = cacheKey('contributions', 'octocat', '2024-01-01', '2024-12-31');
     expect(keyA).not.toBe(keyB);
+  });
+
+  it('creates key with org parameter', () => {
+    expect(cacheKey('contributions', 'octocat', '2024-01-01', '2024-06-30', 'github')).toBe(
+      'contributions:octocat:2024-01-01:2024-06-30:org:github'
+    );
+    expect(cacheKey('contributions', 'octocat', '2025', undefined, 'github')).toBe(
+      'contributions:octocat:2025:org:github'
+    );
+    expect(cacheKey('profile', 'octocat', undefined, undefined, 'github')).toBe(
+      'profile:octocat:org:github'
+    );
   });
 });
 describe('buildInsights', () => {

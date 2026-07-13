@@ -170,5 +170,14 @@ describe('GET /api/github', () => {
       expect(response.status).toBe(404);
       expect(body.error).toContain('User not found');
     });
+
+    it('parses valid org parameter and passes it to getFullDashboardData', async () => {
+      const response = await GET(makeRequest({ username: 'octocat', org: 'github' }));
+      expect(response.status).toBe(200);
+      expect(getFullDashboardData).toHaveBeenCalledWith('octocat', {
+        bypassCache: false,
+        org: 'github',
+      });
+    });
   });
 });
