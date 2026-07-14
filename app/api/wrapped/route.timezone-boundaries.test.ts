@@ -8,6 +8,9 @@ vi.mock('@/lib/github', () => ({
 }));
 
 import { getWrappedData, getCircuitTelemetry } from '@/lib/github';
+
+import type { ContributionCalendar } from '../../../types';
+import type { WrappedStats } from '../../../types/dashboard';
 import { refreshPolicy } from '../../../services/github/refresh-policy';
 import { refreshRateLimiter } from '../../../services/github/refresh-rate-limiter';
 import { quotaMonitor } from '../../../services/github/quota-monitor';
