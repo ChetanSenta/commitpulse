@@ -62,9 +62,13 @@ const SVG_CSP_HEADER =
 
 function buildInlineErrorSVG(text: string): string {
   const MAX_LINE = 48;
-  const truncated = text.length > MAX_LINE * 2 ? text.slice(0, MAX_LINE * 2 - 1) + '…' : text;
-  const line1 = escapeXML(truncated.slice(0, MAX_LINE));
-  const line2 = truncated.length > MAX_LINE ? escapeXML(truncated.slice(MAX_LINE)) : null;
+  const chars = Array.from(text);
+  const truncated =
+    chars.length > MAX_LINE * 2 ? chars.slice(0, MAX_LINE * 2 - 1).join('') + '…' : text;
+  const truncatedChars = Array.from(truncated);
+  const line1 = escapeXML(truncatedChars.slice(0, MAX_LINE).join(''));
+  const line2 =
+    truncatedChars.length > MAX_LINE ? escapeXML(truncatedChars.slice(MAX_LINE).join('')) : null;
   const textY = line2 ? '62' : '75';
   return `<svg xmlns="http://www.w3.org/2000/svg" width="400" height="150" viewBox="0 0 400 150">
   <rect width="400" height="150" fill="#2d0000" rx="8"/>
