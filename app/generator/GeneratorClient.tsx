@@ -66,9 +66,11 @@ export function GeneratorClient() {
           confirmOverwrite || !prevState.description
             ? data.description || prevState.description
             : prevState.description,
-        selectedTechs: Array.from(new Set([...prevState.selectedTechs, ...data.selectedTechs])),
+        selectedTechs: Array.from(
+          new Set([...prevState.selectedTechs, ...(data.selectedTechs || [])])
+        ),
         selectedSocials: Array.from(
-          new Set([...prevState.selectedSocials, ...data.selectedSocials])
+          new Set([...prevState.selectedSocials, ...(data.selectedSocials || [])])
         ),
         socialLinks: { ...prevState.socialLinks, ...data.socialLinks },
       };
