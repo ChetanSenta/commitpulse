@@ -20,6 +20,7 @@ vi.mock('@/lib/github', () => ({
 
 import { GET } from './route';
 import { fetchPRInsights } from '@/services/github/pr-insights';
+import type { PRInsightData } from '@/services/github/pr-insights';
 import { getUserGitHubToken } from '@/lib/githubtoken';
 import { RateLimiter } from '@/lib/rate-limit';
 
@@ -61,15 +62,11 @@ describe('GET /api/pr-insights - Error Resilience', () => {
   });
 
   it('2. recovers gracefully and returns a 500 status when internal properties throw a nested runtime exception (Exception Safety & Fallbacks)', async () => {
-    vi.mocked(fetchPRInsights).mockImplementation((): Promise<never> => {
-      const nestedObj = {};
-      Object.defineProperty(nestedObj, 'prs', {
-        get() {
-          throw new TypeError("Cannot read properties of undefined (reading 'prs')");
-        },
-      });
-      return (nestedObj as { prs?: unknown }).prs as Promise<never>;
-    });
+    vi.mocked(fetchPRInsights).mockImplementation(
+      (username: string, token?: string, signal?: AbortSignal): Promise<PRInsightData> => {
+        throw new TypeError("Cannot read properties of undefined (reading 'prs')");
+      }
+    );
 
     const response = await GET(makeRequest());
     expect(response.status).toBe(500);
