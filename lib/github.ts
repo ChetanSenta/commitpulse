@@ -1964,6 +1964,7 @@ export interface PopularRepo {
   forkCount: number;
   url: string;
   createdAt: string;
+  updatedAt?: string;
   primaryLanguage: { name: string; color: string } | null;
 }
 
@@ -1980,6 +1981,7 @@ export async function fetchPinnedRepos(username: string, token?: string): Promis
               forkCount
               url
               createdAt
+              updatedAt
               primaryLanguage {
                 name
                 color
@@ -2023,6 +2025,7 @@ async function fetchPopularRepos(username: string, token?: string): Promise<Popu
             forkCount
             url
             createdAt
+            updatedAt
             primaryLanguage {
               name
               color
@@ -2065,6 +2068,7 @@ async function fetchStarredRepos(username: string, token?: string): Promise<Popu
             forkCount
             url
             createdAt
+            updatedAt
             primaryLanguage {
               name
               color
