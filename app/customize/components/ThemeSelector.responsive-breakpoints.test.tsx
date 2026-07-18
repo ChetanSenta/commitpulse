@@ -1,6 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ThemeSelector } from './ThemeSelector';
+import React from 'react';
 
 vi.mock('@/context/TranslationContext', () => ({
   useTranslation: () => ({
