@@ -1,11 +1,12 @@
-import { render, screen } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import React from 'react';
+import { render, screen, cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom/vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { CustomizeCTA } from './CustomizeCTA';
 
 vi.mock('next/link', () => ({
-  default: ({ href, children, ...props }: { href: string; children: React.ReactNode }) => (
+  default: ({ href, children, ...props }: React.PropsWithChildren<{ href: string }>) => (
     <a href={href} {...props}>
       {children}
     </a>
@@ -26,58 +27,28 @@ vi.mock('framer-motion', () => ({
   },
 }));
 
+afterEach(() => {
+  cleanup();
+});
+
 describe('CustomizeCTA timezone boundaries', () => {
-  const originalTZ = process.env.TZ;
+  const timezones = ['UTC', 'Asia/Kolkata', 'America/New_York', 'Asia/Tokyo'];
 
-  beforeEach(() => {
-    vi.restoreAllMocks();
-  });
-
-  afterEach(() => {
-    process.env.TZ = originalTZ;
-  });
-
-  it('renders successfully in UTC', () => {
-    process.env.TZ = 'UTC';
+  it.each(timezones)('renders identical core UI in %s timezone', (timezone) => {
+    process.env.TZ = timezone;
 
     render(<CustomizeCTA />);
+
+    expect(screen.getByText('customize_cta.studio_badge')).toBeInTheDocument();
 
     expect(screen.getByText('customize_cta.title')).toBeInTheDocument();
-  });
-
-  it('renders successfully in IST', () => {
-    process.env.TZ = 'Asia/Kolkata';
-
-    render(<CustomizeCTA />);
-
-    expect(screen.getByRole('link')).toHaveAttribute('href', '/customize');
-  });
-
-  it('renders successfully in EST', () => {
-    process.env.TZ = 'America/New_York';
-
-    render(<CustomizeCTA />);
-
-    expect(screen.getByText('customize_cta.btn')).toBeInTheDocument();
-  });
-
-  it('renders successfully in JST', () => {
-    process.env.TZ = 'Asia/Tokyo';
-
-    render(<CustomizeCTA />);
 
     expect(screen.getByText('customize_cta.desc')).toBeInTheDocument();
-  });
 
-  it('renders consistently regardless of timezone changes', () => {
-    process.env.TZ = 'UTC';
+    expect(screen.getByText('customize_cta.btn')).toBeInTheDocument();
 
-    const { rerender } = render(<CustomizeCTA />);
+    expect(screen.getByRole('link')).toHaveAttribute('href', '/customize');
 
-    process.env.TZ = 'Asia/Kolkata';
-
-    rerender(<CustomizeCTA />);
-
-    expect(screen.getByText('customize_cta.title')).toBeInTheDocument();
+    cleanup();
   });
 });
