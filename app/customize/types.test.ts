@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { THEME_KEYS, TIMEZONES } from './types';
+import { THEME_KEYS, TIMEZONES, LANGUAGES } from './types';
 import { themes } from '../../lib/svg/themes';
+import { supportedLanguages } from '@/lib/i18n/badgeLabels';
 
 describe('Theme Keys Synchronization', () => {
   it('THEME_KEYS should exactly match the themes object keys plus "auto" and "random"', () => {
@@ -24,5 +25,25 @@ describe('Timezone options', () => {
   it('contains unique IANA timezone values', () => {
     const values = TIMEZONES.map((tz) => tz.value);
     expect(new Set(values).size).toBe(values.length);
+  });
+});
+
+describe('[Bug fix] customize LANGUAGES parity with badgeLabels.ts', () => {
+  it('offers every language that lib/i18n/badgeLabels.ts supports', () => {
+    const customizeValues = LANGUAGES.map((l) => l.value).sort();
+    const badgeLabelValues = [...supportedLanguages].sort();
+    expect(customizeValues).toEqual(badgeLabelValues);
+  });
+
+  it('includes zh (Chinese) and ta (Tamil)', () => {
+    const values = LANGUAGES.map((l) => l.value);
+    expect(values).toContain('zh');
+    expect(values).toContain('ta');
+  });
+
+  it('every entry has a non-empty label', () => {
+    for (const lang of LANGUAGES) {
+      expect(lang.label.trim().length).toBeGreaterThan(0);
+    }
   });
 });

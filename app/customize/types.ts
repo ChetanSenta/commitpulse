@@ -63,6 +63,8 @@ export const LANGUAGES = [
   { value: 'fr', label: 'French' },
   { value: 'ja', label: 'Japanese' },
   { value: 'de', label: 'German' },
+  { value: 'zh', label: 'Chinese' },
+  { value: 'ta', label: 'Tamil' },
 ] as const satisfies readonly { value: string; label: string }[];
 
 export type Language = (typeof LANGUAGES)[number]['value'];
@@ -94,6 +96,7 @@ export interface CustomizeOptions {
   language: Language;
   timezone: Timezone;
 }
+
 export const TIMEZONES = [
   { value: 'UTC', label: 'UTC (Default)' },
   { value: 'America/New_York', label: 'New York' },
